@@ -3,25 +3,44 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Round } from "@/types/api";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://39a8-85-195-246-194.ngrok-free.app/api/v1";
 
 interface GameDisplayProps {
-  gameName?: string;
+  currentRound: Round | null;
 }
 
-export default function GameDisplay({
-  gameName = "sample-game",
-}: GameDisplayProps) {
+export default function GameDisplay({ currentRound }: GameDisplayProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const [gameUrl, setGameUrl] = useState<string>("");
 
   useEffect(() => {
     setIsLoading(true);
-    // Simulate loading time
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
 
-    return () => clearTimeout(timer);
-  }, []); // Empty dependency array since we don't need to react to gameName changes
+    if (currentRound?.game) {
+      // Check if the game file exists
+      fetch(`${API_BASE_URL}/rounds/${currentRound.id}/game/`)
+        .then((response) => {
+          if (response.ok) {
+            setGameUrl(`${API_BASE_URL}/rounds/${currentRound.id}/game/`);
+          } else {
+            setGameUrl("/games/sample-game.html");
+          }
+        })
+        .catch(() => {
+          setGameUrl("/games/sample-game.html");
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setGameUrl("/games/sample-game.html");
+      setIsLoading(false);
+    }
+  }, [currentRound]);
 
   return (
     <Card className="flex-1 flex flex-col h-full dark:border-gray-800">
@@ -33,7 +52,7 @@ export default function GameDisplay({
         ) : (
           <div className="w-full h-full">
             <iframe
-              src={`/games/${gameName}.html`}
+              src={gameUrl}
               className="w-full h-full border-0"
               title="Game"
               sandbox="allow-scripts allow-same-origin"
