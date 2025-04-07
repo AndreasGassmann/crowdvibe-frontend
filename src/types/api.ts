@@ -35,3 +35,13 @@ export interface Vote {
   created: string;
   updated: string;
 }
+
+export interface Round {
+  id: string;
+  room: string;
+  counter: number;
+  duration: string;
+  game: string | null;
+  created: string;
+  updated: string;
+}

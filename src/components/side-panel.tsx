@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, ChevronUp, Code, MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
-import { Message, Proposal, Room } from "@/types/api";
+import { Message, Proposal, Room, Round } from "@/types/api";
 import { useUser } from "@/contexts/user-context";
 
 export default function SidePanel() {
@@ -21,6 +21,8 @@ export default function SidePanel() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+  const [currentRound, setCurrentRound] = useState<Round | null>(null);
+  const [timeLeft, setTimeLeft] = useState<string>("");
   const [newMessage, setNewMessage] = useState("");
   const [newProposal, setNewProposal] = useState<{
     text: string;
@@ -43,16 +45,25 @@ export default function SidePanel() {
     fetchData();
   }, []);
 
-  // Fetch messages and proposals when room changes
+  // Fetch messages, proposals and rounds when room changes
   const fetchRoomData = useCallback(async () => {
     if (!currentRoom) return;
     try {
-      const [messagesData, proposalsData] = await Promise.all([
+      const [messagesData, proposalsData, roundsData] = await Promise.all([
         api.getMessages(currentRoom.id),
         api.getProposals(currentRoom.id),
+        api.getRounds(currentRoom.id),
       ]);
       setMessages(messagesData);
       setProposals(proposalsData);
+
+      // Set the current round to the last one
+      if (roundsData.length > 0) {
+        const lastRound = roundsData[roundsData.length - 1];
+        setCurrentRound(lastRound);
+      } else {
+        setCurrentRound(null);
+      }
     } catch (error) {
       console.error("Failed to fetch room data:", error);
     }
@@ -63,11 +74,47 @@ export default function SidePanel() {
     fetchRoomData();
   }, [fetchRoomData]);
 
-  // Poll for updates every 2 seconds
+  // Poll for updates every 5 seconds
   useEffect(() => {
-    const interval = setInterval(fetchRoomData, 2000);
+    const interval = setInterval(fetchRoomData, 5000);
     return () => clearInterval(interval);
   }, [fetchRoomData]);
+
+  // Update countdown timer
+  useEffect(() => {
+    if (!currentRound) {
+      setTimeLeft("");
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const endTime = new Date(currentRound.updated);
+      const duration = parseInt(currentRound.duration);
+      endTime.setSeconds(endTime.getSeconds() + duration);
+
+      const diff = endTime.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setTimeLeft("Round ended");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft(
+        `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`
+      );
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [currentRound]);
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -154,50 +201,71 @@ export default function SidePanel() {
 
   return (
     <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col gap-4 h-full overflow-hidden">
+      {currentRound && (
+        <Card className="dark:border-gray-800">
+          <CardHeader className="pb-4 px-3">
+            <CardTitle className="text-lg dark:text-white">
+              Round {currentRound.counter}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <span>Next Update In:</span>
+              <span className="font-medium">{timeLeft}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Suggestions List */}
       <Card className="flex-shrink-0 dark:border-gray-800">
-        <CardHeader className="pb-2 pt-3 px-3">
+        <CardHeader className="pb-1 pt-2 px-3">
           <CardTitle className="text-lg dark:text-white">
             Top Suggestions
           </CardTitle>
         </CardHeader>
-        <CardContent className="max-h-[180px] overflow-y-auto px-3 py-2">
-          <div className="space-y-3">
-            {proposals.map((proposal) => (
-              <div
-                key={proposal.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`flex flex-col items-center p-0 h-auto ${
-                    proposal.user_vote_id ? "text-purple-500" : ""
-                  }`}
-                  onClick={() => handleVote(proposal)}
+        <CardContent className="px-3">
+          {proposals.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+              No suggestions yet
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {proposals.map((proposal) => (
+                <div
+                  key={proposal.id}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <ChevronUp className="h-4 w-4" />
-                  <span className="text-xs font-bold">
-                    {proposal.vote_count}
-                  </span>
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`flex flex-col items-center p-0 h-auto ${
+                      proposal.user_vote_id ? "text-purple-500" : ""
+                    }`}
+                    onClick={() => handleVote(proposal)}
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                    <span className="text-xs font-bold">
+                      {proposal.vote_count}
+                    </span>
+                  </Button>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                      @{proposal.username}
-                    </span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {new Date(proposal.created).toLocaleTimeString()}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        @{proposal.username}
+                      </span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {new Date(proposal.created).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <p className="text-sm line-clamp-2 dark:text-gray-200">
+                      {proposal.text}
+                    </p>
                   </div>
-                  <p className="text-sm line-clamp-2 dark:text-gray-200">
-                    {proposal.text}
-                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -235,61 +303,67 @@ export default function SidePanel() {
 
       {/* Chat */}
       <Card className="flex-1 flex flex-col h-full dark:border-gray-800">
-        <CardHeader className="pb-3 px-3 flex-shrink-0">
+        <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
           <CardTitle className="text-lg dark:text-white">
             Community Chat
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto px-3 min-h-0 max-h-[calc(100vh-500px)]">
-          <div className="space-y-4">
-            {sortedMessages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.user === userId ? "justify-end" : "justify-start"
-                }`}
-              >
+          {messages.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+              No messages yet
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {sortedMessages.map((message) => (
                 <div
-                  className={`flex gap-2 max-w-[80%] ${
-                    message.user === userId ? "flex-row-reverse" : "flex-row"
+                  key={message.id}
+                  className={`flex ${
+                    message.user === userId ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      {message.username.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div
-                      className={`px-3 py-2 rounded-lg ${
-                        message.user === userId
-                          ? "bg-purple-500 text-white"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-                      }`}
-                    >
-                      <p className="text-sm">{message.message}</p>
-                    </div>
-                    <div
-                      className={`flex items-center mt-1 text-xs text-gray-500 ${
-                        message.user === userId
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
-                      <span className="font-medium mr-1">
-                        {message.user === userId ? "You" : message.username}
-                      </span>
-                      <span>
-                        {new Date(message.created).toLocaleTimeString()}
-                      </span>
+                  <div
+                    className={`flex gap-2 max-w-[80%] ${
+                      message.user === userId ? "flex-row-reverse" : "flex-row"
+                    }`}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {message.username.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div
+                        className={`px-3 py-2 rounded-lg ${
+                          message.user === userId
+                            ? "bg-purple-500 text-white"
+                            : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                        }`}
+                      >
+                        <p className="text-sm">{message.message}</p>
+                      </div>
+                      <div
+                        className={`flex items-center mt-1 text-xs text-gray-500 ${
+                          message.user === userId
+                            ? "justify-end"
+                            : "justify-start"
+                        }`}
+                      >
+                        <span className="font-medium mr-1">
+                          {message.user === userId ? "You" : message.username}
+                        </span>
+                        <span>
+                          {new Date(message.created).toLocaleTimeString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
-        <CardFooter className="p-3 border-t dark:border-gray-800 flex-shrink-0">
+        <CardFooter className="p-2 border-t dark:border-gray-800 flex-shrink-0">
           <form onSubmit={handleSendMessage} className="flex w-full gap-2">
             <Input
               placeholder="Type your message..."

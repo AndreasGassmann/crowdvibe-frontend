@@ -39,7 +39,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 h-16 flex-shrink-0">
+      <header className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 h-20 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
           <div className="flex items-center">
             <div className="relative h-10 w-10 mr-2">
@@ -53,8 +53,8 @@ export default function Header() {
           </div>
 
           <Card className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
-            <div className="text-center">
-              <p className="text-xs font-medium mb-1">Next Update In</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium">Next Update In:</p>
               <p className="text-xl font-bold tabular-nums">
                 {formatTime(timeLeft)}
               </p>

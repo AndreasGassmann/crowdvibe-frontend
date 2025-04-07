@@ -1,4 +1,4 @@
-import { Message, Proposal, Room, Vote } from "@/types/api";
+import { Message, Proposal, Room, Vote, Round } from "@/types/api";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -108,5 +108,14 @@ export const api = {
       headers: getHeaders(),
     });
     if (!response.ok) throw new Error("Failed to delete vote");
+  },
+
+  // Rounds
+  getRounds: async (roomId: string): Promise<Round[]> => {
+    const response = await fetch(`${API_BASE_URL}/rounds/?room=${roomId}`, {
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error("Failed to fetch rounds");
+    return response.json();
   },
 };
