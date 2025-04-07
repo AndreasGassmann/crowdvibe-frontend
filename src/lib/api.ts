@@ -1,6 +1,8 @@
 import { Message, Proposal, Room, Vote } from "@/types/api";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://ee2b-85-195-246-194.ngrok-free.app/api/v1";
 
 export const api = {
   // Messages

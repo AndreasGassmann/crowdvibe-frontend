@@ -21,11 +21,11 @@ export default function SidePanel() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [newProposal, setNewProposal] = useState({
-    title: "",
-    description: "",
-    type: "feature" as const,
-  });
+  const [newProposal, setNewProposal] = useState<{
+    title: string;
+    description: string;
+    type: "code" | "feature";
+  }>({ title: "", description: "", type: "feature" });
 
   // Fetch initial data
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function SidePanel() {
     fetchRoomData();
   }, [currentRoom]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newMessage.trim() || !currentRoom) return;
 
@@ -78,7 +78,7 @@ export default function SidePanel() {
     }
   };
 
-  const handleCreateProposal = async (e: React.FormEvent) => {
+  const handleCreateProposal = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newProposal.title.trim() || !currentRoom) return;
 
@@ -192,20 +192,45 @@ export default function SidePanel() {
 
             <div className="flex items-center justify-between">
               <div className="flex space-x-4">
-                <div className="flex items-center space-x-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={`flex items-center space-x-2 ${
+                    newProposal.type === "code"
+                      ? "bg-gray-100 dark:bg-gray-800"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setNewProposal((prev) => ({ ...prev, type: "code" }))
+                  }
+                >
                   <Code className="h-4 w-4 text-purple-500" />
                   <span className="text-sm dark:text-gray-300">Code</span>
-                </div>
-                <div className="flex items-center space-x-2">
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={`flex items-center space-x-2 ${
+                    newProposal.type === "feature"
+                      ? "bg-gray-100 dark:bg-gray-800"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setNewProposal((prev) => ({ ...prev, type: "feature" }))
+                  }
+                >
                   <MessageSquare className="h-4 w-4 text-pink-500" />
                   <span className="text-sm dark:text-gray-300">Feature</span>
-                </div>
+                </Button>
               </div>
 
               <Button
                 type="submit"
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                 size="sm"
+                disabled={!newProposal.title.trim()}
               >
                 Submit
               </Button>
@@ -282,7 +307,7 @@ export default function SidePanel() {
               onChange={(e) => setNewMessage(e.target.value)}
               className="flex-1 dark:bg-gray-800 dark:border-gray-700"
             />
-            <Button type="submit" size="icon">
+            <Button type="submit" size="icon" disabled={!newMessage.trim()}>
               <Send className="h-4 w-4" />
             </Button>
           </form>
