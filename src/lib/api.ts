@@ -69,7 +69,7 @@ export const api = {
   },
 
   // Messages
-  getMessages: async (roomId: string): Promise<Message[]> => {
+  getMessages: async (roomId: number): Promise<Message[]> => {
     const response = await fetch(`${API_BASE_URL}/messages/?room=${roomId}`, {
       headers: getHeaders(),
     });
@@ -91,7 +91,7 @@ export const api = {
   },
 
   // Proposals
-  getProposals: async (roomId: string): Promise<Proposal[]> => {
+  getProposals: async (roomId: number): Promise<Proposal[]> => {
     const response = await fetch(`${API_BASE_URL}/proposals/?room=${roomId}`, {
       headers: getHeaders(),
     });
@@ -124,7 +124,7 @@ export const api = {
     return response.json();
   },
 
-  getRoom: async (roomId: string): Promise<Room> => {
+  getRoom: async (roomId: number): Promise<Room> => {
     const response = await fetch(`${API_BASE_URL}/rooms/${roomId}/`, {
       headers: getHeaders(),
     });
@@ -151,7 +151,7 @@ export const api = {
   },
 
   // Rounds
-  getRounds: async (roomId: string): Promise<Round[]> => {
+  getRounds: async (roomId: number): Promise<Round[]> => {
     const response = await fetch(`${API_BASE_URL}/rounds/?room=${roomId}`, {
       headers: getHeaders(),
     });
@@ -160,7 +160,7 @@ export const api = {
   },
 
   // Leaderboards
-  getLeaderboards: async (roomId: string): Promise<Leaderboard[]> => {
+  getLeaderboards: async (roomId: number): Promise<Leaderboard[]> => {
     const response = await fetch(
       `${API_BASE_URL}/leaderboards/?room=${roomId}`,
       {
@@ -185,7 +185,7 @@ export const api = {
   },
 
   updateLeaderboard: async (
-    leaderboardId: string,
+    leaderboardId: number,
     leaderboard: Partial<Leaderboard>
   ): Promise<Leaderboard> => {
     const response = await fetch(

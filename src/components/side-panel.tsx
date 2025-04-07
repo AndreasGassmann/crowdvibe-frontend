@@ -49,20 +49,25 @@ export default function SidePanel() {
   const fetchRoomData = useCallback(async () => {
     if (!currentRoom) return;
     try {
-      const [messagesData, proposalsData, roundsData] = await Promise.all([
+      const [messagesData, roundsData] = await Promise.all([
         api.getMessages(currentRoom.id),
-        api.getProposals(currentRoom.id),
         api.getRounds(currentRoom.id),
       ]);
       setMessages(messagesData);
-      setProposals(proposalsData);
 
       // Set the current round to the last one
       if (roundsData.length > 0) {
         const lastRound = roundsData[roundsData.length - 1];
         setCurrentRound(lastRound);
+
+        // Fetch proposals for the current round
+        const proposalsData = await api.getProposals(currentRoom.id);
+        setProposals(
+          proposalsData.filter((proposal) => proposal.round === lastRound.id)
+        );
       } else {
         setCurrentRound(null);
+        setProposals([]);
       }
     } catch (error) {
       console.error("Failed to fetch room data:", error);
@@ -138,12 +143,14 @@ export default function SidePanel() {
 
   const handleCreateProposal = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newProposal.text.trim() || !currentRoom || isLoading) return;
+    if (!newProposal.text.trim() || !currentRoom || !currentRound || isLoading)
+      return;
 
     try {
       const proposal = await api.createProposal(
         {
           room: currentRoom.id,
+          round: currentRound.id,
           text: newProposal.text,
           user: userId,
         },
@@ -308,7 +315,7 @@ export default function SidePanel() {
             Community Chat
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto px-3 min-h-0 max-h-[calc(100vh-500px)]">
+        <CardContent className="h-[300px] overflow-y-auto px-3">
           {messages.length === 0 ? (
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
               No messages yet

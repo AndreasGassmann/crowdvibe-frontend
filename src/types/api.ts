@@ -1,6 +1,6 @@
 export interface Message {
   id: string;
-  room: string;
+  room: number;
   user: number;
   username: string;
   message: string;
@@ -9,36 +9,37 @@ export interface Message {
 }
 
 export interface Proposal {
-  id: string;
-  room: string;
+  id: number;
+  room: number;
+  round: string;
   user: number;
   username: string;
   text: string;
   vote_count: number;
-  user_vote_id: string | null;
+  user_vote_id: number | null;
   created: string;
   updated: string;
 }
 
 export interface Room {
-  id: string;
+  id: number;
   name: string;
   created: string;
   updated: string;
 }
 
 export interface Vote {
-  id: string;
+  id: number;
   user: number;
   username: string;
-  proposal: string;
+  proposal: number;
   created: string;
   updated: string;
 }
 
 export interface Round {
   id: string;
-  room: string;
+  room: number;
   counter: number;
   duration: string;
   game: string | null;
@@ -47,9 +48,9 @@ export interface Round {
 }
 
 export interface Leaderboard {
-  id: string;
-  room: string;
-  round: string;
+  id: number;
+  room: number;
+  round: number;
   user: number;
   score: number;
   created: string;
