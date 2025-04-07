@@ -240,7 +240,7 @@ export default function SidePanel() {
             Community Chat
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto px-3 min-h-0">
+        <CardContent className="flex-1 overflow-y-auto px-3 min-h-0 max-h-[calc(100vh-400px)]">
           <div className="space-y-4">
             {sortedMessages.map((message) => (
               <div
