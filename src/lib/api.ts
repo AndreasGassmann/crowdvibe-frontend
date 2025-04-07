@@ -1,21 +1,50 @@
+"use client";
+
 import { Message, Proposal, Room, Vote, Round } from "@/types/api";
+import { storage } from "./storage";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "https://39a8-85-195-246-194.ngrok-free.app/api/v1";
 
-// Hardcoded credentials
-const USERNAME = "Andy";
-const PASSWORD = "aD37LZ4yjoxA";
-const AUTH_HEADER = `Basic ${btoa(`${USERNAME}:${PASSWORD}`)}`;
+const getHeaders = () => {
+  const username = storage.getUsername();
+  const password = storage.getPassword();
 
-const getHeaders = (contentType = "application/json") => ({
-  "Content-Type": contentType,
-  Authorization: AUTH_HEADER,
-});
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${btoa(`${username}:${password}`)}`,
+  };
+};
 
 export const api = {
   // User Profile
+  registerUser: async (username: string, password: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/users/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        email: `${username}@crowdvibe.com`, // Generate a dummy email
+      }),
+    });
+    if (!response.ok) throw new Error("Failed to register user");
+  },
+
+  updateUsername: async (newUsername: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/users/update_username/`, {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        username: newUsername,
+      }),
+    });
+    if (!response.ok) throw new Error("Failed to update username");
+  },
+
   getUserProfile: async (): Promise<number> => {
     const response = await fetch(`${API_BASE_URL}/users/`, {
       headers: getHeaders(),
@@ -90,19 +119,16 @@ export const api = {
   },
 
   // Votes
-  vote: async (
-    vote: Omit<Vote, "id" | "created" | "updated" | "username">
-  ): Promise<Vote> => {
+  vote: async (vote: { proposal: number; user: number }): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/votes/`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(vote),
     });
-    if (!response.ok) throw new Error("Failed to submit vote");
-    return response.json();
+    if (!response.ok) throw new Error("Failed to vote");
   },
 
-  deleteVote: async (voteId: string): Promise<void> => {
+  deleteVote: async (voteId: number): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/votes/${voteId}/`, {
       method: "DELETE",
       headers: getHeaders(),
