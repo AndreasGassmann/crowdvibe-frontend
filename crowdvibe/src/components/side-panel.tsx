@@ -1,4 +1,6 @@
-// components/side-panel.tsx
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -10,8 +12,105 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, ChevronUp, Code, MessageSquare } from "lucide-react";
+import { api } from "@/lib/api";
+import { Message, Proposal, Room } from "@/types/api";
 
 export default function SidePanel() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [newProposal, setNewProposal] = useState({
+    title: "",
+    description: "",
+    type: "feature" as const,
+  });
+
+  // Fetch initial data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const roomsData = await api.getRooms();
+        setRooms(roomsData);
+        if (roomsData.length > 0) {
+          setCurrentRoom(roomsData[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch rooms:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Fetch messages and proposals when room changes
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      if (!currentRoom) return;
+      try {
+        const [messagesData, proposalsData] = await Promise.all([
+          api.getMessages(currentRoom.id),
+          api.getProposals(currentRoom.id),
+        ]);
+        setMessages(messagesData);
+        setProposals(proposalsData);
+      } catch (error) {
+        console.error("Failed to fetch room data:", error);
+      }
+    };
+    fetchRoomData();
+  }, [currentRoom]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !currentRoom) return;
+
+    try {
+      const message = await api.sendMessage({
+        roomId: currentRoom.id,
+        userId: "current-user", // TODO: Replace with actual user ID
+        content: newMessage,
+      });
+      setMessages((prev) => [...prev, message]);
+      setNewMessage("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
+  };
+
+  const handleCreateProposal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProposal.title.trim() || !currentRoom) return;
+
+    try {
+      const proposal = await api.createProposal({
+        roomId: currentRoom.id,
+        userId: "current-user", // TODO: Replace with actual user ID
+        ...newProposal,
+      });
+      setProposals((prev) => [...prev, proposal]);
+      setNewProposal({ title: "", description: "", type: "feature" });
+    } catch (error) {
+      console.error("Failed to create proposal:", error);
+    }
+  };
+
+  const handleVote = async (proposalId: string) => {
+    try {
+      await api.vote({
+        proposalId,
+        userId: "current-user", // TODO: Replace with actual user ID
+      });
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId ? { ...p, votes: p.votes + 1 } : p
+        )
+      );
+    } catch (error) {
+      console.error("Failed to vote:", error);
+    }
+  };
+
   return (
     <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col gap-4 h-full overflow-hidden">
       {/* Suggestions List */}
@@ -23,40 +122,37 @@ export default function SidePanel() {
         </CardHeader>
         <CardContent className="max-h-[180px] overflow-y-auto px-3 py-2">
           <div className="space-y-3">
-            {[1, 2, 3].map((item) => (
+            {proposals.map((proposal) => (
               <div
-                key={item}
+                key={proposal.id}
                 className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <Button
                   variant="ghost"
                   size="sm"
                   className="flex flex-col items-center p-0 h-auto"
+                  onClick={() => handleVote(proposal.id)}
                 >
                   <ChevronUp className="h-4 w-4" />
-                  <span className="text-xs font-bold">{10 - item}</span>
+                  <span className="text-xs font-bold">{proposal.votes}</span>
                 </Button>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                      @user{item}
+                      @user{proposal.userId}
                     </span>
                     <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {item * 5}m ago
+                      {new Date(proposal.createdAt).toLocaleTimeString()}
                     </span>
-                    {item % 2 === 0 ? (
+                    {proposal.type === "code" ? (
                       <Code className="h-3 w-3 text-purple-500" />
                     ) : (
                       <MessageSquare className="h-3 w-3 text-pink-500" />
                     )}
                   </div>
                   <p className="text-sm line-clamp-2 dark:text-gray-200">
-                    {item === 1
-                      ? "Add gravity to the game physics"
-                      : item === 2
-                      ? "Create a scoring system"
-                      : "Add colorful background"}
+                    {proposal.title}
                   </p>
                 </div>
               </div>
@@ -73,10 +169,25 @@ export default function SidePanel() {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-3 py-2">
-          <div className="space-y-3">
+          <form onSubmit={handleCreateProposal} className="space-y-3">
             <Input
-              placeholder="Share your code or feature suggestion..."
-              className="min-h-[60px] dark:bg-gray-800 dark:border-gray-700"
+              placeholder="Title"
+              value={newProposal.title}
+              onChange={(e) =>
+                setNewProposal((prev) => ({ ...prev, title: e.target.value }))
+              }
+              className="dark:bg-gray-800 dark:border-gray-700"
+            />
+            <Input
+              placeholder="Description"
+              value={newProposal.description}
+              onChange={(e) =>
+                setNewProposal((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+              className="dark:bg-gray-800 dark:border-gray-700"
             />
 
             <div className="flex items-center justify-between">
@@ -92,13 +203,14 @@ export default function SidePanel() {
               </div>
 
               <Button
+                type="submit"
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                 size="sm"
               >
                 Submit
               </Button>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
@@ -111,46 +223,50 @@ export default function SidePanel() {
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto px-3 min-h-0">
           <div className="space-y-4">
-            {[1, 2].map((item) => (
+            {messages.map((message) => (
               <div
-                key={item}
+                key={message.id}
                 className={`flex ${
-                  item % 2 === 0 ? "justify-end" : "justify-start"
+                  message.userId === "current-user"
+                    ? "justify-end"
+                    : "justify-start"
                 }`}
               >
                 <div
                   className={`flex gap-2 max-w-[80%] ${
-                    item % 2 === 0 ? "flex-row-reverse" : "flex-row"
+                    message.userId === "current-user"
+                      ? "flex-row-reverse"
+                      : "flex-row"
                   }`}
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>
-                      {item % 2 === 0 ? "YO" : "SY"}
+                      {message.userId.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div
                       className={`px-3 py-2 rounded-lg ${
-                        item % 2 === 0
+                        message.userId === "current-user"
                           ? "bg-purple-500 text-white"
                           : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                       }`}
                     >
-                      <p className="text-sm">
-                        {item % 2 === 0
-                          ? "I think we should add a jumping mechanic to the game."
-                          : "Welcome to CrowdVibe! Discuss game ideas and collaborate with others here."}
-                      </p>
+                      <p className="text-sm">{message.content}</p>
                     </div>
                     <div
                       className={`flex items-center mt-1 text-xs text-gray-500 ${
-                        item % 2 === 0 ? "justify-end" : "justify-start"
+                        message.userId === "current-user"
+                          ? "justify-end"
+                          : "justify-start"
                       }`}
                     >
                       <span className="font-medium mr-1">
-                        {item % 2 === 0 ? "You" : "System"}
+                        {message.userId === "current-user" ? "You" : "User"}
                       </span>
-                      <span>12:34 PM</span>
+                      <span>
+                        {new Date(message.createdAt).toLocaleTimeString()}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -159,9 +275,11 @@ export default function SidePanel() {
           </div>
         </CardContent>
         <CardFooter className="p-3 border-t dark:border-gray-800 flex-shrink-0">
-          <form className="flex w-full gap-2">
+          <form onSubmit={handleSendMessage} className="flex w-full gap-2">
             <Input
               placeholder="Type your message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
               className="flex-1 dark:bg-gray-800 dark:border-gray-700"
             />
             <Button type="submit" size="icon">
