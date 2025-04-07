@@ -47,17 +47,16 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      // Validate the origin
-      if (event.origin !== window.location.origin) return;
+      console.log("handleMessage", event);
 
       try {
-        const { score } = event.data;
+        const score = Number(event.data);
         if (typeof score === "number" && currentRound && userId) {
           // Create or update leaderboard entry
           await api.createLeaderboard(
             {
               room: currentRound.room,
-              round: currentRound.id,
+              round: currentRound.id as any,
               score: score,
               user: userId,
             },

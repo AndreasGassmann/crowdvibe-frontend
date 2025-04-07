@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, ChevronUp, Code, MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
-import { Message, Proposal, Room, Round } from "@/types/api";
+import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import { useUser } from "@/contexts/user-context";
 
 export default function SidePanel() {
@@ -22,7 +22,7 @@ export default function SidePanel() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [currentRound, setCurrentRound] = useState<Round | null>(null);
-  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [leaderboard, setLeaderboard] = useState<Leaderboard[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [newProposal, setNewProposal] = useState<{
     text: string;
@@ -85,41 +85,26 @@ export default function SidePanel() {
     return () => clearInterval(interval);
   }, [fetchRoomData]);
 
-  // Update countdown timer
+  // Fetch leaderboard data when room or round changes
   useEffect(() => {
-    if (!currentRound) {
-      setTimeLeft("");
-      return;
-    }
-
-    const updateCountdown = () => {
-      const now = new Date();
-      const endTime = new Date(currentRound.updated);
-      const duration = parseInt(currentRound.duration);
-      endTime.setSeconds(endTime.getSeconds() + duration);
-
-      const diff = endTime.getTime() - now.getTime();
-
-      if (diff <= 0) {
-        setTimeLeft("Round ended");
-        return;
+    const fetchLeaderboard = async () => {
+      if (!currentRoom || !currentRound) return;
+      try {
+        const leaderboardData = await api.getLeaderboards(currentRoom.id);
+        // Filter for current round and sort by score
+        const currentRoundLeaderboard = leaderboardData
+          .filter((entry) => entry.round === currentRound.id)
+          .sort((a, b) => b.score - a.score);
+        setLeaderboard(currentRoundLeaderboard);
+      } catch (error) {
+        console.error("Failed to fetch leaderboard:", error);
       }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft(
-        `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
-          .toString()
-          .padStart(2, "0")}`
-      );
     };
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    fetchLeaderboard();
+    const interval = setInterval(fetchLeaderboard, 5000);
     return () => clearInterval(interval);
-  }, [currentRound]);
+  }, [currentRoom, currentRound]);
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -212,14 +197,36 @@ export default function SidePanel() {
         <Card className="dark:border-gray-800">
           <CardHeader className="pb-4 px-3">
             <CardTitle className="text-lg dark:text-white">
-              Round {currentRound.counter}
+              Round {currentRound.counter} Leaderboard
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3">
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <span>Next Update In:</span>
-              <span className="font-medium">{timeLeft}</span>
-            </div>
+            {leaderboard.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+                No scores yet
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {leaderboard.map((entry, index) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm dark:text-white">
+                        {index + 1}.
+                      </span>
+                      <span className="text-sm dark:text-gray-200">
+                        @{entry.username}
+                      </span>
+                    </div>
+                    <span className="font-medium text-sm dark:text-white">
+                      {entry.score}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

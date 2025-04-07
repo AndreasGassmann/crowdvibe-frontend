@@ -172,7 +172,7 @@ export const api = {
   },
 
   createLeaderboard: async (
-    leaderboard: Omit<Leaderboard, "id" | "created" | "updated">,
+    leaderboard: Omit<Leaderboard, "id" | "created" | "updated" | "username">,
     userId: number
   ): Promise<Leaderboard> => {
     const response = await fetch(`${API_BASE_URL}/leaderboards/`, {

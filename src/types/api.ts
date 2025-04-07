@@ -39,7 +39,7 @@ export interface Vote {
 
 export interface Round {
   id: string;
-  room: number;
+  room: string;
   counter: number;
   duration: string;
   game: string | null;
@@ -49,9 +49,10 @@ export interface Round {
 
 export interface Leaderboard {
   id: number;
-  room: number;
-  round: number;
+  room: string;
+  round: string;
   user: number;
+  username: string;
   score: number;
   created: string;
   updated: string;
