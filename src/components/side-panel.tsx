@@ -207,7 +207,7 @@ export default function SidePanel() {
   }
 
   return (
-    <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col gap-4 h-full overflow-hidden">
+    <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col gap-4 h-full overflow-y-auto">
       {currentRound && (
         <Card className="dark:border-gray-800">
           <CardHeader className="pb-4 px-3">
@@ -309,13 +309,13 @@ export default function SidePanel() {
       </Card>
 
       {/* Chat */}
-      <Card className="flex-1 flex flex-col h-full dark:border-gray-800">
+      <Card className="flex-1 flex flex-col dark:border-gray-800">
         <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
           <CardTitle className="text-lg dark:text-white">
             Community Chat
           </CardTitle>
         </CardHeader>
-        <CardContent className="h-[300px] overflow-y-auto px-3">
+        <CardContent className="flex-1 overflow-y-auto px-3">
           {messages.length === 0 ? (
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
               No messages yet
