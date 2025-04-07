@@ -56,7 +56,7 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
           await api.createLeaderboard(
             {
               room: currentRound.room,
-              round: currentRound.id as any,
+              round: currentRound.id,
               score: score,
               user: userId,
             },
