@@ -45,3 +45,13 @@ export interface Round {
   created: string;
   updated: string;
 }
+
+export interface Leaderboard {
+  id: string;
+  room: string;
+  round: string;
+  user: number;
+  score: number;
+  created: string;
+  updated: string;
+}

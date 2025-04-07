@@ -1,6 +1,6 @@
 "use client";
 
-import { Message, Proposal, Room, Vote, Round } from "@/types/api";
+import { Message, Proposal, Room, Vote, Round, Leaderboard } from "@/types/api";
 import { storage } from "./storage";
 
 const API_BASE_URL =
@@ -153,6 +153,47 @@ export const api = {
       headers: getHeaders(),
     });
     if (!response.ok) throw new Error("Failed to fetch rounds");
+    return response.json();
+  },
+
+  // Leaderboards
+  getLeaderboards: async (roomId: string): Promise<Leaderboard[]> => {
+    const response = await fetch(
+      `${API_BASE_URL}/leaderboards/?room=${roomId}`,
+      {
+        headers: getHeaders(),
+      }
+    );
+    if (!response.ok) throw new Error("Failed to fetch leaderboards");
+    return response.json();
+  },
+
+  createLeaderboard: async (
+    leaderboard: Omit<Leaderboard, "id" | "created" | "updated">,
+    userId: number
+  ): Promise<Leaderboard> => {
+    const response = await fetch(`${API_BASE_URL}/leaderboards/`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ ...leaderboard, user: userId }),
+    });
+    if (!response.ok) throw new Error("Failed to create leaderboard entry");
+    return response.json();
+  },
+
+  updateLeaderboard: async (
+    leaderboardId: string,
+    leaderboard: Partial<Leaderboard>
+  ): Promise<Leaderboard> => {
+    const response = await fetch(
+      `${API_BASE_URL}/leaderboards/${leaderboardId}/`,
+      {
+        method: "PATCH",
+        headers: getHeaders(),
+        body: JSON.stringify(leaderboard),
+      }
+    );
+    if (!response.ok) throw new Error("Failed to update leaderboard entry");
     return response.json();
   },
 };

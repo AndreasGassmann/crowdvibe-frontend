@@ -4,6 +4,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Round } from "@/types/api";
+import { api } from "@/lib/api";
+import { useUser } from "@/contexts/user-context";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -16,6 +18,7 @@ interface GameDisplayProps {
 export default function GameDisplay({ currentRound }: GameDisplayProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [gameUrl, setGameUrl] = useState<string>("");
+  const { userId } = useUser();
 
   useEffect(() => {
     setIsLoading(true);
@@ -41,6 +44,34 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
       setIsLoading(false);
     }
   }, [currentRound]);
+
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      // Validate the origin
+      if (event.origin !== window.location.origin) return;
+
+      try {
+        const { score } = event.data;
+        if (typeof score === "number" && currentRound && userId) {
+          // Create or update leaderboard entry
+          await api.createLeaderboard(
+            {
+              room: currentRound.room,
+              round: currentRound.id,
+              score: score,
+              user: userId,
+            },
+            userId
+          );
+        }
+      } catch (error) {
+        console.error("Failed to update leaderboard:", error);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [currentRound, userId]);
 
   return (
     <Card className="flex-1 flex flex-col h-full dark:border-gray-800">
