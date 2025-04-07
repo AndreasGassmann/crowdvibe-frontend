@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardHeader,
@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, ChevronUp, Code, MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
 import { Message, Proposal, Room } from "@/types/api";
+import { useUser } from "@/contexts/user-context";
 
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -22,10 +23,9 @@ export default function SidePanel() {
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [newProposal, setNewProposal] = useState<{
-    title: string;
-    description: string;
-    type: "code" | "feature";
-  }>({ title: "", description: "", type: "feature" });
+    text: string;
+  }>({ text: "" });
+  const { userId, isLoading } = useUser();
 
   // Fetch initial data
   useEffect(() => {
@@ -44,33 +44,44 @@ export default function SidePanel() {
   }, []);
 
   // Fetch messages and proposals when room changes
-  useEffect(() => {
-    const fetchRoomData = async () => {
-      if (!currentRoom) return;
-      try {
-        const [messagesData, proposalsData] = await Promise.all([
-          api.getMessages(currentRoom.id),
-          api.getProposals(currentRoom.id),
-        ]);
-        setMessages(messagesData);
-        setProposals(proposalsData);
-      } catch (error) {
-        console.error("Failed to fetch room data:", error);
-      }
-    };
-    fetchRoomData();
+  const fetchRoomData = useCallback(async () => {
+    if (!currentRoom) return;
+    try {
+      const [messagesData, proposalsData] = await Promise.all([
+        api.getMessages(currentRoom.id),
+        api.getProposals(currentRoom.id),
+      ]);
+      setMessages(messagesData);
+      setProposals(proposalsData);
+    } catch (error) {
+      console.error("Failed to fetch room data:", error);
+    }
   }, [currentRoom]);
+
+  // Initial fetch when room changes
+  useEffect(() => {
+    fetchRoomData();
+  }, [fetchRoomData]);
+
+  // Poll for updates every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchRoomData, 2000);
+    return () => clearInterval(interval);
+  }, [fetchRoomData]);
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newMessage.trim() || !currentRoom) return;
+    if (!newMessage.trim() || !currentRoom || isLoading) return;
 
     try {
-      const message = await api.sendMessage({
-        roomId: currentRoom.id,
-        userId: "current-user", // TODO: Replace with actual user ID
-        content: newMessage,
-      });
+      const message = await api.sendMessage(
+        {
+          room: currentRoom.id,
+          message: newMessage,
+          user: userId,
+        },
+        userId
+      );
       setMessages((prev) => [...prev, message]);
       setNewMessage("");
     } catch (error) {
@@ -80,36 +91,66 @@ export default function SidePanel() {
 
   const handleCreateProposal = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newProposal.title.trim() || !currentRoom) return;
+    if (!newProposal.text.trim() || !currentRoom || isLoading) return;
 
     try {
-      const proposal = await api.createProposal({
-        roomId: currentRoom.id,
-        userId: "current-user", // TODO: Replace with actual user ID
-        ...newProposal,
-      });
+      const proposal = await api.createProposal(
+        {
+          room: currentRoom.id,
+          text: newProposal.text,
+          user: userId,
+        },
+        userId
+      );
       setProposals((prev) => [...prev, proposal]);
-      setNewProposal({ title: "", description: "", type: "feature" });
+      setNewProposal({ text: "" });
     } catch (error) {
       console.error("Failed to create proposal:", error);
     }
   };
 
-  const handleVote = async (proposalId: string) => {
+  const handleVote = async (proposal: Proposal) => {
+    if (isLoading) return;
+
     try {
-      await api.vote({
-        proposalId,
-        userId: "current-user", // TODO: Replace with actual user ID
-      });
-      setProposals((prev) =>
-        prev.map((p) =>
-          p.id === proposalId ? { ...p, votes: p.votes + 1 } : p
-        )
-      );
+      if (proposal.user_vote_id) {
+        // If we've already voted, delete the vote
+        await api.deleteVote(proposal.user_vote_id);
+      } else {
+        // If we haven't voted, create a new vote
+        await api.vote({
+          proposal: proposal.id,
+          user: userId,
+        });
+      }
+      // Refresh proposals to get updated vote count and user_vote_id
+      if (currentRoom) {
+        const updatedProposals = await api.getProposals(currentRoom.id);
+        setProposals(updatedProposals);
+      }
     } catch (error) {
-      console.error("Failed to vote:", error);
+      console.error("Failed to handle vote:", error);
     }
   };
+
+  // Sort messages to show user's messages on the right
+  const sortedMessages = [...messages].sort((a, b) => {
+    if (a.user === userId && b.user !== userId) return 1;
+    if (a.user !== userId && b.user === userId) return -1;
+    return new Date(a.created).getTime() - new Date(b.created).getTime();
+  });
+
+  if (isLoading) {
+    return (
+      <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col gap-4 h-full overflow-hidden">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col gap-4 h-full overflow-hidden">
@@ -130,29 +171,28 @@ export default function SidePanel() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex flex-col items-center p-0 h-auto"
-                  onClick={() => handleVote(proposal.id)}
+                  className={`flex flex-col items-center p-0 h-auto ${
+                    proposal.user_vote_id ? "text-purple-500" : ""
+                  }`}
+                  onClick={() => handleVote(proposal)}
                 >
                   <ChevronUp className="h-4 w-4" />
-                  <span className="text-xs font-bold">{proposal.votes}</span>
+                  <span className="text-xs font-bold">
+                    {proposal.vote_count}
+                  </span>
                 </Button>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                      @user{proposal.userId}
+                      @{proposal.username}
                     </span>
                     <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {new Date(proposal.createdAt).toLocaleTimeString()}
+                      {new Date(proposal.created).toLocaleTimeString()}
                     </span>
-                    {proposal.type === "code" ? (
-                      <Code className="h-3 w-3 text-purple-500" />
-                    ) : (
-                      <MessageSquare className="h-3 w-3 text-pink-500" />
-                    )}
                   </div>
                   <p className="text-sm line-clamp-2 dark:text-gray-200">
-                    {proposal.title}
+                    {proposal.text}
                   </p>
                 </div>
               </div>
@@ -171,66 +211,20 @@ export default function SidePanel() {
         <CardContent className="px-3 py-2">
           <form onSubmit={handleCreateProposal} className="space-y-3">
             <Input
-              placeholder="Title"
-              value={newProposal.title}
+              placeholder="Your idea..."
+              value={newProposal.text}
               onChange={(e) =>
-                setNewProposal((prev) => ({ ...prev, title: e.target.value }))
-              }
-              className="dark:bg-gray-800 dark:border-gray-700"
-            />
-            <Input
-              placeholder="Description"
-              value={newProposal.description}
-              onChange={(e) =>
-                setNewProposal((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
+                setNewProposal((prev) => ({ ...prev, text: e.target.value }))
               }
               className="dark:bg-gray-800 dark:border-gray-700"
             />
 
-            <div className="flex items-center justify-between">
-              <div className="flex space-x-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className={`flex items-center space-x-2 ${
-                    newProposal.type === "code"
-                      ? "bg-gray-100 dark:bg-gray-800"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    setNewProposal((prev) => ({ ...prev, type: "code" }))
-                  }
-                >
-                  <Code className="h-4 w-4 text-purple-500" />
-                  <span className="text-sm dark:text-gray-300">Code</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className={`flex items-center space-x-2 ${
-                    newProposal.type === "feature"
-                      ? "bg-gray-100 dark:bg-gray-800"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    setNewProposal((prev) => ({ ...prev, type: "feature" }))
-                  }
-                >
-                  <MessageSquare className="h-4 w-4 text-pink-500" />
-                  <span className="text-sm dark:text-gray-300">Feature</span>
-                </Button>
-              </div>
-
+            <div className="flex justify-end">
               <Button
                 type="submit"
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                 size="sm"
-                disabled={!newProposal.title.trim()}
+                disabled={!newProposal.text.trim()}
               >
                 Submit
               </Button>
@@ -248,49 +242,45 @@ export default function SidePanel() {
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto px-3 min-h-0">
           <div className="space-y-4">
-            {messages.map((message) => (
+            {sortedMessages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${
-                  message.userId === "current-user"
-                    ? "justify-end"
-                    : "justify-start"
+                  message.user === userId ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
                   className={`flex gap-2 max-w-[80%] ${
-                    message.userId === "current-user"
-                      ? "flex-row-reverse"
-                      : "flex-row"
+                    message.user === userId ? "flex-row-reverse" : "flex-row"
                   }`}
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>
-                      {message.userId.slice(0, 2).toUpperCase()}
+                      {message.username.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div
                       className={`px-3 py-2 rounded-lg ${
-                        message.userId === "current-user"
+                        message.user === userId
                           ? "bg-purple-500 text-white"
                           : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      <p className="text-sm">{message.message}</p>
                     </div>
                     <div
                       className={`flex items-center mt-1 text-xs text-gray-500 ${
-                        message.userId === "current-user"
+                        message.user === userId
                           ? "justify-end"
                           : "justify-start"
                       }`}
                     >
                       <span className="font-medium mr-1">
-                        {message.userId === "current-user" ? "You" : "User"}
+                        {message.user === userId ? "You" : message.username}
                       </span>
                       <span>
-                        {new Date(message.createdAt).toLocaleTimeString()}
+                        {new Date(message.created).toLocaleTimeString()}
                       </span>
                     </div>
                   </div>

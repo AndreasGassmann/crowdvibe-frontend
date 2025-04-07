@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Sample Game</title>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #1a1a1a;
+        color: white;
+        font-family: Arial, sans-serif;
+      }
+      .game-container {
+        text-align: center;
+      }
+      canvas {
+        border: 2px solid white;
+        background-color: #2a2a2a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Sample Game</h1>
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+    </div>
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Game state
+      let x = canvas.width / 2;
+      let y = canvas.height / 2;
+      let dx = 2;
+      let dy = -2;
+      const ballRadius = 10;
+
+      function drawBall() {
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBall();
+
+        if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+          dx = -dx;
+        }
+        if (y + dy > canvas.height - ballRadius || y + dy < ballRadius) {
+          dy = -dy;
+        }
+
+        x += dx;
+        y += dy;
+      }
+
+      setInterval(draw, 10);
+    </script>
+  </body>
+</html>

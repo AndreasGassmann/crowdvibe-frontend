@@ -1,32 +1,37 @@
 export interface Message {
   id: string;
-  roomId: string;
-  userId: string;
-  content: string;
-  createdAt: string;
+  room: string;
+  user: number;
+  username: string;
+  message: string;
+  created: string;
+  updated: string;
 }
 
 export interface Proposal {
   id: string;
-  roomId: string;
-  userId: string;
-  title: string;
-  description: string;
-  type: "code" | "feature";
-  votes: number;
-  createdAt: string;
+  room: string;
+  user: number;
+  username: string;
+  text: string;
+  vote_count: number;
+  user_vote_id: string | null;
+  created: string;
+  updated: string;
 }
 
 export interface Room {
   id: string;
   name: string;
-  description: string;
-  createdAt: string;
+  created: string;
+  updated: string;
 }
 
 export interface Vote {
   id: string;
-  proposalId: string;
-  userId: string;
-  createdAt: string;
+  user: number;
+  username: string;
+  proposal: string;
+  created: string;
+  updated: string;
 }
