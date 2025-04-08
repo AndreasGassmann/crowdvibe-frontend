@@ -1,8 +1,8 @@
 {
-  "name": "crowdvibe",
+  "name": "crowdvibe-frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://andreasgassmann.github.io/crowdvibe",
+  "homepage": "https://andreasgassmann.github.io/crowdvibe-frontend",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
