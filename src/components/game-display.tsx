@@ -8,7 +8,8 @@ import { api } from "@/lib/api";
 import { useUser } from "@/contexts/user-context";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://dev.lukeisontheroad.com/api/v1";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://crowdvibe.lukeisontheroad.com/api/v1";
 
 interface GameDisplayProps {
   currentRound: Round | null;

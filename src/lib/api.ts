@@ -4,7 +4,8 @@ import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import { storage } from "./storage";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://dev.lukeisontheroad.com/api/v1";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://crowdvibe.lukeisontheroad.com/api/v1";
 
 const getHeaders = () => {
   const username = storage.getUsername();
