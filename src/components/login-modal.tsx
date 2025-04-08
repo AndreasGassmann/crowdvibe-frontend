@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { storage } from "@/lib/storage";
+import { useLoading } from "@/contexts/loading-context";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -29,12 +31,24 @@ export default function LoginModal({
   const [activeTab, setActiveTab] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { setIsLoading, setIsAuthenticated } = useLoading();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would handle authentication here
-    onLogin();
-    onClose();
+    if (!email || !password) return;
+
+    try {
+      setIsLoading(true);
+      storage.setUsername(email);
+      storage.setPassword(password);
+      setIsAuthenticated(true);
+      onLogin();
+      onClose();
+    } catch (error) {
+      console.error("Failed to register:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

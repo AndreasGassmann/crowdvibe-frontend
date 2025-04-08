@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { UserProvider } from "@/contexts/user-context";
+import { LoadingProvider } from "@/contexts/loading-context";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +27,7 @@ export default function RootLayout({
             enableSystem={false}
             storageKey="crowdvibe-theme"
           >
-            {children}
+            <LoadingProvider>{children}</LoadingProvider>
           </ThemeProvider>
         </UserProvider>
       </body>
