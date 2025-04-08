@@ -15,6 +15,7 @@ import { Send, ChevronUp, Code, MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
 import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import { useUser } from "@/contexts/user-context";
+import { POLLING_INTERVAL } from "@/lib/config";
 
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -74,17 +75,6 @@ export default function SidePanel() {
     }
   }, [currentRoom]);
 
-  // Initial fetch when room changes
-  useEffect(() => {
-    fetchRoomData();
-  }, [fetchRoomData]);
-
-  // Poll for updates every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(fetchRoomData, 5000);
-    return () => clearInterval(interval);
-  }, [fetchRoomData]);
-
   // Fetch leaderboard data when room or round changes
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -102,9 +92,20 @@ export default function SidePanel() {
     };
 
     fetchLeaderboard();
-    const interval = setInterval(fetchLeaderboard, 5000);
+    const interval = setInterval(fetchLeaderboard, POLLING_INTERVAL);
     return () => clearInterval(interval);
   }, [currentRoom, currentRound]);
+
+  // Initial fetch when room changes
+  useEffect(() => {
+    fetchRoomData();
+  }, [fetchRoomData]);
+
+  // Poll for updates
+  useEffect(() => {
+    const interval = setInterval(fetchRoomData, POLLING_INTERVAL);
+    return () => clearInterval(interval);
+  }, [fetchRoomData]);
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

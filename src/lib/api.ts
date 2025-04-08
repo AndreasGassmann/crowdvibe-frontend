@@ -4,8 +4,7 @@ import { Message, Proposal, Room, Vote, Round, Leaderboard } from "@/types/api";
 import { storage } from "./storage";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://39a8-85-195-246-194.ngrok-free.app/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "https://dev.lukeisontheroad.com/api/v1";
 
 const getHeaders = () => {
   const username = storage.getUsername();

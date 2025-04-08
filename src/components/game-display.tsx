@@ -8,8 +8,7 @@ import { api } from "@/lib/api";
 import { useUser } from "@/contexts/user-context";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://39a8-85-195-246-194.ngrok-free.app/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "https://dev.lukeisontheroad.com/api/v1";
 
 interface GameDisplayProps {
   currentRound: Round | null;
@@ -51,7 +50,7 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
 
       try {
         const score = Number(event.data);
-        if (typeof score === "number" && currentRound && userId) {
+        if (typeof score === "number" && score > 0 && currentRound && userId) {
           // Create or update leaderboard entry
           await api.createLeaderboard(
             {
