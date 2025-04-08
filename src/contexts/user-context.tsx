@@ -29,6 +29,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         // Try to register if not already registered
         if (!storage.isUserRegistered()) {
           try {
+            if (!username || !password) {
+              throw new Error("Username or password is missing");
+            }
             await api.registerUser(username, password);
           } catch (error) {
             // If registration fails, it might mean the user already exists
