@@ -8,25 +8,27 @@ import { Settings, LogIn } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import LoginModal from "@/components/login-modal";
 import SettingsModal from "@/components/settings-modal";
+import { Round } from "@/types/api";
+import { calculateSecondsLeft } from "@/lib/countdown";
 
-export default function Header() {
-  const [timeLeft, setTimeLeft] = useState(3600); // 1 hour in seconds
+interface HeaderProps {
+  currentRound: Round | null;
+}
+
+export default function Header({ currentRound }: HeaderProps) {
+  const [timeLeft, setTimeLeft] = useState(0);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 0) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
+    const updateTimeLeft = () => {
+      setTimeLeft(calculateSecondsLeft(currentRound));
+    };
 
-    return () => clearInterval(timer);
-  }, []);
+    updateTimeLeft();
+    const interval = setInterval(updateTimeLeft, 1000);
+    return () => clearInterval(interval);
+  }, [currentRound]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);

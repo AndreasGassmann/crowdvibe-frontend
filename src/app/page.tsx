@@ -43,7 +43,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      <Header />
+      <Header currentRound={currentRound} />
       <main className="flex flex-1 flex-col md:flex-row p-4 gap-4 w-full overflow-hidden">
         <GameDisplay currentRound={currentRound} />
         <SidePanel />
