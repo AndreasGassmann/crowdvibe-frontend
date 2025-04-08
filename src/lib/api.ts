@@ -47,17 +47,13 @@ export const api = {
     const userId = await api.getUserProfile();
 
     const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
-      method: "PUT",
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify({
-        username: storage.getUsername(),
         first_name: newFirstname,
-        password: storage.getPassword(),
       }),
     });
     if (!response.ok) throw new Error("Failed to update username");
-
-    storage.setFirstnameSet(true);
   },
 
   getUserProfile: async (): Promise<number> => {
