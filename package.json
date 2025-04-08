@@ -2,8 +2,9 @@
   "name": "crowdvibe",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://andreasgassmann.github.io/crowdvibe",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
