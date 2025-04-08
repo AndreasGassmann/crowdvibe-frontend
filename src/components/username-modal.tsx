@@ -15,20 +15,24 @@ import { Label } from "@/components/ui/label";
 interface UsernameModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (username: string) => void;
+  onSave: (firstname: string) => void;
+  title?: string;
+  description?: string;
 }
 
 export default function UsernameModal({
   isOpen,
   onClose,
   onSave,
+  title = "Welcome to CrowdVibe",
+  description = "Please choose a username to personalize your experience",
 }: UsernameModalProps) {
-  const [username, setUsername] = useState("");
+  const [firstname, setFirstname] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim()) {
-      onSave(username.trim());
+    if (firstname.trim()) {
+      onSave(firstname.trim());
       onClose();
     }
   };
@@ -37,25 +41,23 @@ export default function UsernameModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] dark:bg-gray-900 dark:border-gray-800">
         <DialogHeader>
-          <DialogTitle className="dark:text-white">
-            Welcome to CrowdVibe
-          </DialogTitle>
+          <DialogTitle className="dark:text-white">{title}</DialogTitle>
           <DialogDescription className="dark:text-gray-400">
-            Please choose a username to personalize your experience
+            {description}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label htmlFor="username" className="dark:text-gray-300">
-              Username
+            <Label htmlFor="firstname" className="dark:text-gray-300">
+              Name
             </Label>
             <Input
-              id="username"
+              id="firstname"
               type="text"
-              placeholder="Choose a username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your name"
+              value={firstname}
+              onChange={(e) => setFirstname(e.target.value)}
               required
               className="dark:bg-gray-800 dark:border-gray-700"
             />

@@ -30,6 +30,7 @@ export const api = {
       },
       body: JSON.stringify({
         username,
+        first_name: username,
         password,
         email: `${username}@crowdvibe.com`, // Generate a dummy email
       }),
