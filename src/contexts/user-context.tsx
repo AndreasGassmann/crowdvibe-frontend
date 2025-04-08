@@ -42,7 +42,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         // Get the user ID
         const userId = await api.getUserProfile();
         setUserId(userId);
-        setUsername(username);
+        setUsername(username || "");
         setIsLoading(false);
         setIsUsernameModalOpen(!storage.hasSetFirstname());
       } catch (error) {
