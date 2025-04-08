@@ -3,6 +3,7 @@ export interface Message {
   room: number;
   user: number;
   username: string;
+  first_name: string;
   message: string;
   created: string;
   updated: string;
@@ -14,6 +15,7 @@ export interface Proposal {
   round: string;
   user: number;
   username: string;
+  first_name: string;
   text: string;
   vote_count: number;
   user_vote_id: number | null;

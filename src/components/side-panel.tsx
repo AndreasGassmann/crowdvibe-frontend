@@ -173,10 +173,8 @@ export default function SidePanel() {
     }
   };
 
-  // Sort messages to show user's messages on the right
+  // Sort messages by timestamp
   const sortedMessages = [...messages].sort((a, b) => {
-    if (a.user === userId && b.user !== userId) return 1;
-    if (a.user !== userId && b.user === userId) return -1;
     return new Date(a.created).getTime() - new Date(b.created).getTime();
   });
 
@@ -267,7 +265,7 @@ export default function SidePanel() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                        @{proposal.username}
+                        @{proposal.first_name}
                       </span>
                       <span className="text-xs text-gray-400 dark:text-gray-500">
                         {new Date(proposal.created).toLocaleTimeString()}
@@ -344,7 +342,7 @@ export default function SidePanel() {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>
-                        {message.username.slice(0, 2).toUpperCase()}
+                        {message.first_name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
@@ -365,7 +363,7 @@ export default function SidePanel() {
                         }`}
                       >
                         <span className="font-medium mr-1">
-                          {message.user === userId ? "You" : message.username}
+                          {message.user === userId ? "You" : message.first_name}
                         </span>
                         <span>
                           {new Date(message.created).toLocaleTimeString()}
