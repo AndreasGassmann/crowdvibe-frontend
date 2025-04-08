@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  uniqueNamesGenerator,
+  adjectives,
+  animals,
+} from "unique-names-generator";
+
 const STORAGE_KEYS = {
   USERNAME: "username",
   PASSWORD: "password",
@@ -82,8 +88,19 @@ class StorageService implements IStorageService {
 
   getUsername(): string | null {
     if (!this.username) {
-      // Generate a random username if none exists
-      this.username = `user_${Math.random().toString(36).slice(-6)}`;
+      // Generate a human-readable name with capital letters and spaces
+      const readableName = uniqueNamesGenerator({
+        dictionaries: [adjectives, animals],
+        separator: " ",
+        length: 2,
+        style: "capital",
+      });
+
+      // Set the readable version as firstname
+      this.setFirstname(readableName);
+
+      // Create slugified version for username (lowercase with hyphens)
+      this.username = readableName.toLowerCase().replace(/\s+/g, "-");
       this.set(STORAGE_KEYS.USERNAME, this.username);
     }
     return this.username;
@@ -109,7 +126,7 @@ class StorageService implements IStorageService {
   }
 
   getFirstname(): string | null {
-    return this.firstname || this.username;
+    return this.firstname;
   }
 
   setFirstname(firstname: string): void {

@@ -31,6 +31,7 @@ export default function LoginModal({
   const [activeTab, setActiveTab] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const { setIsLoading, setIsAuthenticated } = useLoading();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,6 +42,9 @@ export default function LoginModal({
       setIsLoading(true);
       storage.setUsername(email);
       storage.setPassword(password);
+      if (fullName) {
+        storage.setFirstname(fullName);
+      }
       setIsAuthenticated(true);
       onLogin();
       onClose();
@@ -153,6 +157,8 @@ export default function LoginModal({
                   id="register-name"
                   type="text"
                   placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                   className="dark:bg-gray-800 dark:border-gray-700"
                 />
