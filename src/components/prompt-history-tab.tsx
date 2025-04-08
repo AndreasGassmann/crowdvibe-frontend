@@ -17,7 +17,7 @@ type PromptItem = {
 };
 
 export default function PromptHistoryTab() {
-  const [prompts, setPrompts] = useState<PromptItem[]>([
+  const [prompts] = useState<PromptItem[]>([
     {
       id: "1",
       content: "Add gravity to the game physics",

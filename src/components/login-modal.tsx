@@ -131,7 +131,7 @@ export default function LoginModal({
               </Button>
 
               <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <button
                   type="button"
                   className="text-purple-600 dark:text-purple-400 hover:underline"

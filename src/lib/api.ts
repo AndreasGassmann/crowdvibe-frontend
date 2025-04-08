@@ -1,6 +1,6 @@
 "use client";
 
-import { Message, Proposal, Room, Vote, Round, Leaderboard } from "@/types/api";
+import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import { storage } from "./storage";
 
 const API_BASE_URL =

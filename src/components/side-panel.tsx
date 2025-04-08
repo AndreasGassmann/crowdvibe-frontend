@@ -17,7 +17,6 @@ import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import { useUser } from "@/contexts/user-context";
 import { POLLING_INTERVAL } from "@/lib/config";
 import { storage } from "@/lib/storage";
-import { calculateTimeLeft } from "@/lib/countdown";
 
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,7 +29,6 @@ export default function SidePanel() {
     text: string;
   }>({ text: "" });
   const { userId, isLoading } = useUser();
-  const [timeLeft, setTimeLeft] = useState("");
 
   // Fetch initial data
   useEffect(() => {
@@ -108,17 +106,6 @@ export default function SidePanel() {
     return () => clearInterval(interval);
   }, [fetchRoomData]);
 
-  // Update countdown timer
-  useEffect(() => {
-    const updateCountdown = () => {
-      setTimeLeft(calculateTimeLeft(currentRound));
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, [currentRound]);
-
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newMessage.trim() || !currentRoom || isLoading) return;
@@ -129,7 +116,7 @@ export default function SidePanel() {
           room: currentRoom.id,
           message: newMessage,
           user: userId,
-          first_name: storage.getUsername(),
+          first_name: storage.getUsername() || "Anonymous",
         },
         userId
       );
@@ -152,6 +139,7 @@ export default function SidePanel() {
           round: currentRound.id,
           text: newProposal.text,
           user: userId,
+          first_name: storage.getUsername() || "Anonymous",
         },
         userId
       );
