@@ -15,7 +15,6 @@ export interface RoomState {
 class RoomStateService {
   private static instance: RoomStateService;
   private client: WebSocketClient | null = null;
-  private isConnected = false;
   private stateSubject = new BehaviorSubject<RoomState>({
     messages: [],
     proposals: [],
@@ -186,7 +185,7 @@ class RoomStateService {
   }
 
   public createProposal(text: string) {
-    if (!this.client || !this.isConnected) {
+    if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
@@ -200,12 +199,11 @@ class RoomStateService {
       this.client.send(wsMessage);
     } catch (error) {
       console.error("Failed to create proposal:", error);
-      this.isConnected = false;
     }
   }
 
   public vote(proposalId: number) {
-    if (!this.client || !this.isConnected) {
+    if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
@@ -219,12 +217,11 @@ class RoomStateService {
       this.client.send(wsMessage);
     } catch (error) {
       console.error("Failed to vote:", error);
-      this.isConnected = false;
     }
   }
 
   public deleteVote(voteId: number) {
-    if (!this.client || !this.isConnected) {
+    if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
@@ -238,12 +235,11 @@ class RoomStateService {
       this.client.send(wsMessage);
     } catch (error) {
       console.error("Failed to delete vote:", error);
-      this.isConnected = false;
     }
   }
 
   public requestProposals() {
-    if (!this.client || !this.isConnected) {
+    if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
@@ -257,12 +253,11 @@ class RoomStateService {
       this.client.send(wsMessage);
     } catch (error) {
       console.error("Failed to request proposals:", error);
-      this.isConnected = false;
     }
   }
 
   public requestRounds() {
-    if (!this.client || !this.isConnected) {
+    if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
@@ -276,12 +271,11 @@ class RoomStateService {
       this.client.send(wsMessage);
     } catch (error) {
       console.error("Failed to request rounds:", error);
-      this.isConnected = false;
     }
   }
 
   public requestLeaderboard() {
-    if (!this.client || !this.isConnected) {
+    if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
@@ -295,7 +289,6 @@ class RoomStateService {
       this.client.send(wsMessage);
     } catch (error) {
       console.error("Failed to request leaderboard:", error);
-      this.isConnected = false;
     }
   }
 }

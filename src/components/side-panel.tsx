@@ -32,7 +32,7 @@ export default function SidePanel() {
 
   return (
     <div className="w-full md:w-80 h-full flex flex-col">
-      <Tabs.Root defaultValue="chat" className="flex-1 flex flex-col">
+      <Tabs.Root defaultValue="chat" className="flex-1 flex flex-col h-full">
         <Tabs.List className="flex border-b">
           <Tabs.Trigger
             value="chat"
@@ -48,13 +48,13 @@ export default function SidePanel() {
           </Tabs.Trigger>
         </Tabs.List>
 
-        <Tabs.Content value="chat" className="flex-1 flex flex-col">
+        <Tabs.Content value="chat" className="flex-1 flex flex-col h-full">
           <Card className="flex-1 flex flex-col h-full">
             <CardHeader className="flex-shrink-0">
               <CardTitle>Chat</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto min-h-0">
-              <div className="space-y-4 pr-2">
+              <div className="space-y-4 pr-2 h-full">
                 {messages.map((message) => {
                   const isOwnMessage = message.username === currentUsername;
                   return (
@@ -105,8 +105,40 @@ export default function SidePanel() {
           </Card>
         </Tabs.Content>
 
-        <Tabs.Content value="proposals" className="flex-1">
-          {/* Proposals content */}
+        <Tabs.Content value="proposals" className="flex-1 flex flex-col">
+          <Card className="flex-1 flex flex-col h-full">
+            <CardHeader className="flex-shrink-0">
+              <CardTitle>Proposals</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto min-h-0">
+              <div className="space-y-4 pr-2 h-full">
+                {/* Proposals list will go here */}
+              </div>
+            </CardContent>
+            <CardFooter className="flex-shrink-0">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const proposalText = formData.get("proposal") as string;
+                  if (proposalText.trim()) {
+                    roomStateService.createProposal(proposalText);
+                    e.currentTarget.reset();
+                  }
+                }}
+                className="flex space-x-2 w-full"
+              >
+                <Input
+                  name="proposal"
+                  placeholder="Enter your proposal..."
+                  className="flex-1"
+                />
+                <Button type="submit" size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </CardFooter>
+          </Card>
         </Tabs.Content>
       </Tabs.Root>
     </div>
