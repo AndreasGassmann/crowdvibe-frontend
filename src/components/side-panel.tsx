@@ -15,10 +15,12 @@ import { Send } from "lucide-react";
 import { Message } from "@/types/api";
 import * as Tabs from "@radix-ui/react-tabs";
 import { roomStateService } from "@/lib/room-state-service";
+import { storage } from "@/lib/storage";
 
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const currentUsername = storage.getUsername();
 
   useEffect(() => {
     const subscription = roomStateService.getState().subscribe((state) => {
@@ -53,21 +55,29 @@ export default function SidePanel() {
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto min-h-0">
               <div className="space-y-4 pr-2">
-                {messages.map((message) => (
-                  <div key={message.id} className="flex items-start space-x-2">
-                    <Avatar>
-                      <AvatarFallback>
-                        {message.first_name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-sm">
-                        {message.first_name}
-                      </p>
-                      <p className="text-sm">{message.message}</p>
+                {messages.map((message) => {
+                  const isOwnMessage = message.username === currentUsername;
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex items-start space-x-2 ${
+                        isOwnMessage ? "flex-row-reverse" : ""
+                      }`}
+                    >
+                      <Avatar>
+                        <AvatarFallback>
+                          {message.first_name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className={`${isOwnMessage ? "text-right" : ""}`}>
+                        <p className="font-medium text-sm">
+                          {message.first_name}
+                        </p>
+                        <p className="text-sm">{message.message}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
             <CardFooter className="flex-shrink-0">
