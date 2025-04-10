@@ -47,12 +47,12 @@ export default function SidePanel() {
         </Tabs.List>
 
         <Tabs.Content value="chat" className="flex-1 flex flex-col">
-          <Card className="flex-1 flex flex-col">
-            <CardHeader>
+          <Card className="flex-1 flex flex-col h-full">
+            <CardHeader className="flex-shrink-0">
               <CardTitle>Chat</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto">
-              <div className="space-y-4">
+            <CardContent className="flex-1 overflow-y-auto min-h-0">
+              <div className="space-y-4 pr-2">
                 {messages.map((message) => (
                   <div key={message.id} className="flex items-start space-x-2">
                     <Avatar>
@@ -70,7 +70,7 @@ export default function SidePanel() {
                 ))}
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-shrink-0">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();

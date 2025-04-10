@@ -8,10 +8,6 @@ const WS_BASE_URL =
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
-  private pingInterval: NodeJS.Timeout | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectTimeout = 1000; // Start with 1 second
   private _isConnected = false;
 
   constructor(
@@ -42,8 +38,6 @@ export class WebSocketClient {
     this.ws.onopen = () => {
       console.log("WebSocket connected");
       this._isConnected = true;
-      this.reconnectAttempts = 0;
-      this.reconnectTimeout = 1000;
     };
 
     this.ws.onmessage = (event) => {
@@ -55,34 +49,13 @@ export class WebSocketClient {
       console.error("WebSocket error:", error);
       this._isConnected = false;
       this.onError?.(error);
-      // Only attempt reconnect on actual errors
-      this.handleReconnect();
     };
 
     this.ws.onclose = (event) => {
       console.log("WebSocket closed:", event);
       this._isConnected = false;
       this.onClose?.(event);
-      // Only attempt reconnect if the close was not clean
-      if (!event.wasClean) {
-        this.handleReconnect();
-      }
     };
-  }
-
-  private handleReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      setTimeout(() => {
-        this.reconnectAttempts++;
-        this.reconnectTimeout *= 2; // Exponential backoff
-        console.log(
-          `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-        );
-        this.connect();
-      }, this.reconnectTimeout);
-    } else {
-      console.error("Max reconnection attempts reached");
-    }
   }
 
   send(data: ActionPayload) {
@@ -97,22 +70,19 @@ export class WebSocketClient {
       return;
     }
 
-    if (this.ws.readyState === WebSocket.OPEN && this._isConnected) {
+    if (this.ws.readyState === WebSocket.OPEN) {
       try {
         this.ws.send(JSON.stringify(data));
       } catch (error) {
         console.error("Error sending message:", error);
-        this.handleReconnect();
       }
     } else {
       console.error("WebSocket is not in OPEN state:", this.ws.readyState);
-      this.handleReconnect();
     }
   }
 
   disconnect() {
-    // Only disconnect if we have an active connection
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (this.ws) {
       this.ws.close();
       this.ws = null;
       this._isConnected = false;
