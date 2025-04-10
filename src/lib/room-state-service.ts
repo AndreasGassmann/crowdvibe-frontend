@@ -139,7 +139,29 @@ class RoomStateService {
         break;
 
       case "proposal_broadcast":
-        // Handle proposal updates
+        console.log("Received proposal broadcast:", message);
+        const currentProposals = this.stateSubject.value.proposals;
+
+        // Single proposal update
+        const newProposal: Proposal = {
+          id: Date.now(),
+          room: this.currentRoomSubject.value?.id || "0",
+          round: "0", // This will be updated by the server
+          user: 0, // This will be updated by the server
+          username: message.username,
+          first_name: message.first_name,
+          text: message.proposal,
+          vote_count: 0,
+          user_vote_id: null,
+          created: message.created,
+          updated: message.created,
+        };
+
+        this.stateSubject.next({
+          ...this.stateSubject.value,
+          proposals: [...currentProposals, newProposal],
+        });
+
         break;
 
       case "round_broadcast":

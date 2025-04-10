@@ -12,23 +12,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
-import { Message } from "@/types/api";
+import { Message, Proposal } from "@/types/api";
 import * as Tabs from "@radix-ui/react-tabs";
 import { roomStateService } from "@/lib/room-state-service";
 import { storage } from "@/lib/storage";
 
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const currentUsername = storage.getUsername();
 
   useEffect(() => {
     const subscription = roomStateService.getState().subscribe((state) => {
       setMessages(state.messages);
+      setProposals(state.proposals);
     });
+
+    // Request initial proposals
+    roomStateService.requestProposals();
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleVote = (proposalId: number) => {
+    roomStateService.vote(proposalId);
+  };
+
+  const handleDeleteVote = (voteId: number) => {
+    roomStateService.deleteVote(voteId);
+  };
 
   return (
     <div className="w-full md:w-80 h-full flex flex-col">
@@ -112,7 +125,49 @@ export default function SidePanel() {
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto min-h-0">
               <div className="space-y-4 pr-2 h-full">
-                {/* Proposals list will go here */}
+                {proposals.map((proposal) => (
+                  <div key={proposal.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <Avatar>
+                          <AvatarFallback>
+                            {proposal.first_name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{proposal.first_name}</p>
+                          <p className="text-sm text-gray-500">
+                            {proposal.text}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">
+                          {proposal.vote_count} votes
+                        </span>
+                        {proposal.user_vote_id ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleDeleteVote(proposal.user_vote_id!)
+                            }
+                          >
+                            Unvote
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVote(proposal.id)}
+                          >
+                            Vote
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
             <CardFooter className="flex-shrink-0">
