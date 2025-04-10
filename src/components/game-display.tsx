@@ -28,17 +28,17 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
           if (response.ok) {
             setGameUrl(`${API_BASE_URL}/rounds/${currentRound.id}/game/`);
           } else {
-            setGameUrl("/games/sample-game.html");
+            setGameUrl("/crowdvibe-frontend/games/sample-game.html");
           }
         })
         .catch(() => {
-          setGameUrl("/games/sample-game.html");
+          setGameUrl("/crowdvibe-frontend/games/sample-game.html");
         })
         .finally(() => {
           setIsLoading(false);
         });
     } else {
-      setGameUrl("/games/sample-game.html");
+      setGameUrl("/crowdvibe-frontend/games/sample-game.html");
       setIsLoading(false);
     }
   }, [currentRound]);
