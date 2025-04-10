@@ -14,7 +14,6 @@ type UserContextType = {
 const UserContext = createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [userId, setUserId] = useState<number>(-1);
   const [username, setUsername] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
@@ -39,9 +38,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Get the user ID
-        const userId = await api.getUserProfile();
-        setUserId(userId);
         setUsername(username || "");
         setIsLoading(false);
         setIsUsernameModalOpen(!storage.hasSetFirstname());
@@ -57,7 +53,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const handleSaveUsername = async (newFirstname: string) => {
     try {
       // Update the first_name in the API
-      await api.updateUsername(newFirstname);
+      console.log("Updating username:", newFirstname);
+      // await api.updateUsername(newFirstname);
       storage.setFirstnameSet(true);
       setIsUsernameModalOpen(false);
     } catch (error) {

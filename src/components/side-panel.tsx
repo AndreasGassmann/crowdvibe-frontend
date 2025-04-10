@@ -16,8 +16,10 @@ import { api } from "@/lib/api";
 import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import { useUser } from "@/contexts/user-context";
 import { POLLING_INTERVAL } from "@/lib/config";
-import { storage } from "@/lib/storage";
 import * as Tabs from "@radix-ui/react-tabs";
+import { roomStateService } from "@/lib/room-state-service";
+import { RoomState } from "@/lib/room-state-service";
+import { useLoading } from "@/contexts/loading-context";
 
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,6 +32,40 @@ export default function SidePanel() {
     text: string;
   }>({ text: "" });
   const { userId, isLoading } = useUser();
+  const { isLoading: loading } = useLoading();
+
+  useEffect(() => {
+    const subscription = roomStateService.getState().subscribe((state) => {
+      setMessages(state.messages);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Subscribe to room state changes
+  useEffect(() => {
+    const subscription = roomStateService
+      .getState()
+      .subscribe((state: RoomState) => {
+        setMessages(state.messages);
+        setProposals(state.proposals);
+        setCurrentRound(state.currentRound);
+        setLeaderboard(state.leaderboard);
+      });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Subscribe to current room changes
+  useEffect(() => {
+    const subscription = roomStateService
+      .getCurrentRoom()
+      .subscribe((room: Room | null) => {
+        setCurrentRoom(room);
+      });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Fetch initial data
   useEffect(() => {
@@ -37,7 +73,7 @@ export default function SidePanel() {
       try {
         const roomsData = await api.getRooms();
         if (roomsData.length > 0) {
-          setCurrentRoom(roomsData[0]);
+          roomStateService.connect("9675eee6-7e4b-4143-8b55-96fd47e5a748");
         }
       } catch (error) {
         console.error("Failed to fetch rooms:", error);
@@ -46,54 +82,17 @@ export default function SidePanel() {
     fetchData();
   }, []);
 
-  // Fetch messages, proposals and rounds when room changes
-  const fetchRoomData = useCallback(async () => {
+  // Fetch proposals and rounds when room changes
+  const fetchRoomData = useCallback(() => {
     if (!currentRoom) return;
-    try {
-      const [messagesData, roundsData] = await Promise.all([
-        api.getMessages(currentRoom.id),
-        api.getRounds(currentRoom.id),
-      ]);
-      setMessages(messagesData);
-
-      // Set the current round to the last one
-      if (roundsData.length > 0) {
-        const lastRound = roundsData[roundsData.length - 1];
-        setCurrentRound(lastRound);
-
-        // Fetch proposals for the current round
-        const proposalsData = await api.getProposals(currentRoom.id);
-        setProposals(
-          proposalsData.filter((proposal) => proposal.round === lastRound.id)
-        );
-      } else {
-        setCurrentRound(null);
-        setProposals([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch room data:", error);
-    }
+    roomStateService.requestProposals();
+    roomStateService.requestRounds();
   }, [currentRoom]);
 
   // Fetch leaderboard data when room or round changes
   useEffect(() => {
-    const fetchLeaderboard = async () => {
-      if (!currentRoom || !currentRound) return;
-      try {
-        const leaderboardData = await api.getLeaderboards(currentRoom.id);
-        // Filter for current round and sort by score
-        const currentRoundLeaderboard = leaderboardData
-          .filter((entry) => entry.round === currentRound.id)
-          .sort((a, b) => b.score - a.score);
-        setLeaderboard(currentRoundLeaderboard);
-      } catch (error) {
-        console.error("Failed to fetch leaderboard:", error);
-      }
-    };
-
-    fetchLeaderboard();
-    const interval = setInterval(fetchLeaderboard, POLLING_INTERVAL);
-    return () => clearInterval(interval);
+    if (!currentRoom || !currentRound) return;
+    roomStateService.requestLeaderboard();
   }, [currentRoom, currentRound]);
 
   // Initial fetch when room changes
@@ -107,24 +106,10 @@ export default function SidePanel() {
     return () => clearInterval(interval);
   }, [fetchRoomData]);
 
-  const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !currentRoom || isLoading) return;
-
-    try {
-      const message = await api.sendMessage(
-        {
-          room: currentRoom.id,
-          message: newMessage,
-          user: userId,
-          first_name: storage.getUsername() || "Anonymous",
-        },
-        userId
-      );
-      setMessages((prev) => [...prev, message]);
+  const handleSendMessage = () => {
+    if (newMessage.trim() && !loading) {
+      roomStateService.sendMessage(newMessage);
       setNewMessage("");
-    } catch (error) {
-      console.error("Failed to send message:", error);
     }
   };
 
@@ -134,17 +119,7 @@ export default function SidePanel() {
       return;
 
     try {
-      const proposal = await api.createProposal(
-        {
-          room: currentRoom.id,
-          round: currentRound.id,
-          text: newProposal.text,
-          user: userId,
-          first_name: storage.getUsername() || "Anonymous",
-        },
-        userId
-      );
-      setProposals((prev) => [...prev, proposal]);
+      roomStateService.createProposal(newProposal.text, currentRound.id);
       setNewProposal({ text: "" });
     } catch (error) {
       console.error("Failed to create proposal:", error);
@@ -157,18 +132,10 @@ export default function SidePanel() {
     try {
       if (proposal.user_vote_id) {
         // If we've already voted, delete the vote
-        await api.deleteVote(proposal.user_vote_id);
+        roomStateService.deleteVote(proposal.user_vote_id);
       } else {
         // If we haven't voted, create a new vote
-        await api.vote({
-          proposal: proposal.id,
-          user: userId,
-        });
-      }
-      // Refresh proposals to get updated vote count and user_vote_id
-      if (currentRoom) {
-        const updatedProposals = await api.getProposals(currentRoom.id);
-        setProposals(updatedProposals);
+        roomStateService.vote(proposal.id);
       }
     } catch (error) {
       console.error("Failed to handle vote:", error);
@@ -394,9 +361,23 @@ export default function SidePanel() {
               placeholder="Type your message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
               className="flex-1 dark:bg-gray-800 dark:border-gray-700"
             />
-            <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!newMessage.trim() || isLoading}
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+            >
               <Send className="h-4 w-4" />
             </Button>
           </form>

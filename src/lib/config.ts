@@ -1,1 +1,1 @@
-export const POLLING_INTERVAL = 5000; // 5 seconds
+export const POLLING_INTERVAL = 100000000000; // 5 seconds

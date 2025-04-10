@@ -5,14 +5,13 @@ import { useState, useEffect } from "react";
 import Header from "@/components/header";
 import GameDisplay from "@/components/game-display";
 import SidePanel from "@/components/side-panel";
-import { api } from "@/lib/api";
-import { Room, Round } from "@/types/api";
+import { Round } from "@/types/api";
 import { useLoading } from "@/contexts/loading-context";
 import { storage } from "@/lib/storage";
+import { roomStateService } from "@/lib/room-state-service";
 
 export default function Home() {
-  const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
-  const [currentRound, setCurrentRound] = useState<Round | null>(null);
+  const [currentRound] = useState<Round | null>(null);
   const { isLoading, setIsLoading, isAuthenticated, setIsAuthenticated } =
     useLoading();
 
@@ -35,44 +34,24 @@ export default function Home() {
     checkAuth();
   }, [setIsLoading, setIsAuthenticated]);
 
-  // Fetch data only when authenticated
+  // Connect to room when authenticated
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const fetchData = async () => {
+    const connectToRoom = async () => {
       try {
         setIsLoading(true);
-        const rooms = await api.getRooms();
-        if (rooms.length > 0) {
-          setCurrentRoom(rooms[0]);
-        }
+        // Hardcoded room for now
+        const roomId = "9675eee6-7e4b-4143-8b55-96fd47e5a748";
+        roomStateService.connect(roomId);
       } catch (error) {
-        console.error("Failed to fetch rooms:", error);
+        console.error("Failed to connect to room:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchData();
+    connectToRoom();
   }, [isAuthenticated, setIsLoading]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !currentRoom) return;
-
-    const fetchRounds = async () => {
-      try {
-        setIsLoading(true);
-        const rounds = await api.getRounds(currentRoom.id);
-        if (rounds.length > 0) {
-          setCurrentRound(rounds[rounds.length - 1]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch rounds:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchRounds();
-  }, [currentRoom, isAuthenticated, setIsLoading]);
 
   if (isLoading) {
     return (

@@ -1,6 +1,6 @@
 export interface Message {
   id: string;
-  room: number;
+  room: string;
   user: number;
   username: string;
   first_name: string;
@@ -11,7 +11,7 @@ export interface Message {
 
 export interface Proposal {
   id: number;
-  room: number;
+  room: string;
   round: string;
   user: number;
   username: string;
@@ -24,7 +24,7 @@ export interface Proposal {
 }
 
 export interface Room {
-  id: number;
+  id: string;
   name: string;
   created: string;
   updated: string;
