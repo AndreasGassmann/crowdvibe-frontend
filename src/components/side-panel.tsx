@@ -196,7 +196,7 @@ export default function SidePanel() {
     <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col gap-4 h-full overflow-y-auto">
       {currentRound && (
         <Card className="dark:border-gray-800">
-          <CardHeader className="pb-4 px-3">
+          <CardHeader className="pb-2 px-3">
             <CardTitle className="text-lg dark:text-white">
               Round {currentRound.counter} Leaderboard
             </CardTitle>
@@ -233,7 +233,7 @@ export default function SidePanel() {
       )}
       {/* Suggestions List */}
       <Card className="flex-shrink-0 dark:border-gray-800">
-        <CardHeader className="pb-1 pt-2 px-3">
+        <CardHeader className="pb-0 px-3">
           <CardTitle className="text-lg dark:text-white">Suggestions</CardTitle>
         </CardHeader>
         <CardContent className="px-3">
@@ -328,7 +328,7 @@ export default function SidePanel() {
 
       {/* Chat */}
       <Card className="flex-1 flex flex-col dark:border-gray-800">
-        <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
+        <CardHeader className="pb-0 px-3 flex-shrink-0">
           <CardTitle className="text-lg dark:text-white">
             Community Chat
           </CardTitle>
