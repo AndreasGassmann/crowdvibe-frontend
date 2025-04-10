@@ -79,6 +79,12 @@ class RoomStateService {
     );
 
     this.client.connect();
+    // Wait for the WebSocket to actually connect before setting isConnected
+    setTimeout(() => {
+      if (this.client) {
+        this.isConnected = true;
+      }
+    }, 1000);
   }
 
   public disconnect() {
