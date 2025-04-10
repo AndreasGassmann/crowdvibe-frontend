@@ -18,7 +18,6 @@ interface GameDisplayProps {
 export default function GameDisplay({ currentRound }: GameDisplayProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [gameUrl, setGameUrl] = useState<string>("");
-  const { userId } = useUser();
 
   useEffect(() => {
     setIsLoading(true);
@@ -51,17 +50,13 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
 
       try {
         const score = Number(event.data);
-        if (typeof score === "number" && score > 0 && currentRound && userId) {
+        if (typeof score === "number" && score > 0 && currentRound) {
           // Create or update leaderboard entry
-          await api.createLeaderboard(
-            {
-              room: currentRound.room,
-              round: currentRound.id,
-              score: score,
-              user: userId,
-            },
-            userId
-          );
+          await api.createLeaderboard({
+            room: currentRound.room,
+            round: currentRound.id,
+            score: score,
+          });
         }
       } catch (error) {
         console.error("Failed to update leaderboard:", error);
@@ -70,7 +65,7 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [currentRound, userId]);
+  }, [currentRound]);
 
   return (
     <Card className="flex-1 flex flex-col h-full dark:border-gray-800">

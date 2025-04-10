@@ -6,7 +6,6 @@ import { storage } from "@/lib/storage";
 import UsernameModal from "@/components/username-modal";
 
 type UserContextType = {
-  userId: number;
   username: string;
   isLoading: boolean;
 };
@@ -67,7 +66,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ userId, username, isLoading }}>
+    <UserContext.Provider value={{ username, isLoading }}>
       {children}
       <UsernameModal
         isOpen={isUsernameModalOpen}
