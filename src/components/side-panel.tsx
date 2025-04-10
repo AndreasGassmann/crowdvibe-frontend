@@ -17,6 +17,7 @@ import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import { useUser } from "@/contexts/user-context";
 import { POLLING_INTERVAL } from "@/lib/config";
 import { storage } from "@/lib/storage";
+import * as Tabs from "@radix-ui/react-tabs";
 
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -233,85 +234,95 @@ export default function SidePanel() {
       {/* Suggestions List */}
       <Card className="flex-shrink-0 dark:border-gray-800">
         <CardHeader className="pb-1 pt-2 px-3">
-          <CardTitle className="text-lg dark:text-white">
-            Top Suggestions
-          </CardTitle>
+          <CardTitle className="text-lg dark:text-white">Suggestions</CardTitle>
         </CardHeader>
         <CardContent className="px-3">
-          {proposals.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
-              No suggestions yet
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {proposals.map((proposal) => (
-                <div
-                  key={proposal.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`flex flex-col items-center p-0 h-auto ${
-                      proposal.user_vote_id ? "text-purple-500" : ""
-                    }`}
-                    onClick={() => handleVote(proposal)}
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                    <span className="text-xs font-bold">
-                      {proposal.vote_count}
-                    </span>
-                  </Button>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                        @{proposal.first_name}
-                      </span>
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {new Date(proposal.created).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p className="text-sm line-clamp-2 dark:text-gray-200">
-                      {proposal.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Suggestion Form */}
-      <Card className="flex-shrink-0 dark:border-gray-800">
-        <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-lg dark:text-white">
-            Submit Your Idea
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-3 py-2">
-          <form onSubmit={handleCreateProposal} className="space-y-3">
-            <Input
-              placeholder="Your idea..."
-              value={newProposal.text}
-              onChange={(e) =>
-                setNewProposal((prev) => ({ ...prev, text: e.target.value }))
-              }
-              className="dark:bg-gray-800 dark:border-gray-700"
-            />
-
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                size="sm"
-                disabled={!newProposal.text.trim()}
+          <Tabs.Root defaultValue="view" className="w-full">
+            <Tabs.List className="flex w-full border-b border-gray-200 dark:border-gray-700 mb-4">
+              <Tabs.Trigger
+                value="view"
+                className="flex-1 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-600 dark:data-[state=active]:border-purple-400"
               >
-                Submit
-              </Button>
-            </div>
-          </form>
+                Top Suggestions
+              </Tabs.Trigger>
+              <Tabs.Trigger
+                value="submit"
+                className="flex-1 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-600 dark:data-[state=active]:border-purple-400"
+              >
+                Submit Idea
+              </Tabs.Trigger>
+            </Tabs.List>
+            <Tabs.Content value="view" className="space-y-2">
+              {proposals.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+                  No suggestions yet
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {proposals.map((proposal) => (
+                    <div
+                      key={proposal.id}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400">
+                          {proposal.first_name?.[0] || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm dark:text-white break-words">
+                          {proposal.text}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            @{proposal.first_name}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            •
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {proposal.vote_count} votes
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 w-8 p-0 ${
+                          proposal.user_vote_id
+                            ? "text-purple-600 dark:text-purple-400"
+                            : "text-gray-400 dark:text-gray-500"
+                        }`}
+                        onClick={() => handleVote(proposal)}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Tabs.Content>
+            <Tabs.Content value="submit">
+              <form onSubmit={handleCreateProposal} className="space-y-3">
+                <Input
+                  type="text"
+                  placeholder="Enter your idea..."
+                  value={newProposal.text}
+                  onChange={(e) =>
+                    setNewProposal({ ...newProposal, text: e.target.value })
+                  }
+                  className="w-full"
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!newProposal.text.trim() || isLoading}
+                >
+                  Submit
+                </Button>
+              </form>
+            </Tabs.Content>
+          </Tabs.Root>
         </CardContent>
       </Card>
 
