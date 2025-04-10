@@ -2,8 +2,8 @@
 
 import { BehaviorSubject, Observable } from "rxjs";
 import { WebSocketClient } from "./websocket";
-import { WebSocketMessage } from "@/types/websocket";
 import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
+import type { ActionPayload, BroadcastEvent } from "../types/websocket";
 
 export interface RoomState {
   messages: Message[];
@@ -23,7 +23,7 @@ class RoomStateService {
     leaderboard: [],
   });
   private currentRoomSubject = new BehaviorSubject<Room | null>(null);
-  private messageHandlers: ((message: WebSocketMessage) => void)[] = [];
+  private messageHandlers: ((message: BroadcastEvent) => void)[] = [];
 
   private constructor() {}
 
@@ -44,9 +44,17 @@ class RoomStateService {
 
   public connect(roomId: string) {
     console.log("Connecting to room:", roomId);
-    if (this.client) {
-      console.log("Disconnecting existing connection");
+
+    // Only disconnect if we're connecting to a different room
+    if (this.client && this.currentRoomSubject.value?.id !== roomId) {
+      console.log("Disconnecting existing connection for different room");
       this.disconnect();
+    }
+
+    // If we already have a client for this room, don't create a new one
+    if (this.client && this.currentRoomSubject.value?.id === roomId) {
+      console.log("Already connected to this room");
+      return;
     }
 
     this.currentRoomSubject.next({
@@ -70,21 +78,13 @@ class RoomStateService {
       },
       (error) => {
         console.error("WebSocket error:", error);
-        this.isConnected = false;
       },
       (event) => {
         console.log("WebSocket closed:", event);
-        this.isConnected = false;
       }
     );
 
     this.client.connect();
-    // Wait for the WebSocket to actually connect before setting isConnected
-    setTimeout(() => {
-      if (this.client) {
-        this.isConnected = true;
-      }
-    }, 1000);
   }
 
   public disconnect() {
@@ -93,19 +93,18 @@ class RoomStateService {
       this.client.disconnect();
       this.client = null;
     }
-    this.isConnected = false;
     this.currentRoomSubject.next(null);
   }
 
   public sendMessage(message: string) {
     console.log("Attempting to send message:", message);
-    if (!this.client || !this.isConnected) {
+    if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
 
-    const wsMessage: WebSocketMessage = {
-      type: "chat_message",
+    const wsMessage: ActionPayload = {
+      type: "chat_action",
       message,
     };
 
@@ -114,17 +113,16 @@ class RoomStateService {
       this.client.send(wsMessage);
     } catch (error) {
       console.error("Failed to send message:", error);
-      this.isConnected = false;
     }
   }
 
-  private handleWebSocketMessage(message: WebSocketMessage) {
+  private handleWebSocketMessage(message: BroadcastEvent) {
     console.log("Handling WebSocket message:", message);
     switch (message.type) {
-      case "broadcast_message":
+      case "chat_broadcast":
         const currentState = this.stateSubject.value;
         const newMessage: Message = {
-          id: Date.now().toString(),
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           room: this.currentRoomSubject.value?.id || "0",
           user: 0, // This will be updated by the server
           username: message.username,
@@ -141,26 +139,16 @@ class RoomStateService {
         });
         break;
 
-      case "proposals_update":
-        this.stateSubject.next({
-          ...this.stateSubject.value,
-          proposals: message.proposals,
-        });
+      case "proposal_broadcast":
+        // Handle proposal updates
         break;
 
-      case "rounds_update":
-        const lastRound = message.rounds[message.rounds.length - 1] || null;
-        this.stateSubject.next({
-          ...this.stateSubject.value,
-          currentRound: lastRound,
-        });
+      case "round_broadcast":
+        // Handle round updates
         break;
 
-      case "leaderboard_update":
-        this.stateSubject.next({
-          ...this.stateSubject.value,
-          leaderboard: message.leaderboard,
-        });
+      case "leaderboard_broadcast":
+        // Handle leaderboard updates
         break;
     }
   }
@@ -197,16 +185,15 @@ class RoomStateService {
     });
   }
 
-  public createProposal(text: string, round: string) {
+  public createProposal(text: string) {
     if (!this.client || !this.isConnected) {
       console.error("WebSocket is not connected");
       return;
     }
 
-    const wsMessage: WebSocketMessage = {
-      type: "create_proposal",
-      text,
-      round,
+    const wsMessage: ActionPayload = {
+      type: "proposal_action",
+      proposal: text,
     };
 
     try {
@@ -223,9 +210,9 @@ class RoomStateService {
       return;
     }
 
-    const wsMessage: WebSocketMessage = {
-      type: "vote",
-      proposal: proposalId,
+    const wsMessage: ActionPayload = {
+      type: "proposal_action",
+      proposal: proposalId.toString(),
     };
 
     try {
@@ -242,9 +229,9 @@ class RoomStateService {
       return;
     }
 
-    const wsMessage: WebSocketMessage = {
-      type: "delete_vote",
-      vote_id: voteId,
+    const wsMessage: ActionPayload = {
+      type: "proposal_action",
+      proposal: voteId.toString(),
     };
 
     try {
@@ -261,8 +248,9 @@ class RoomStateService {
       return;
     }
 
-    const wsMessage: WebSocketMessage = {
-      type: "get_proposals",
+    const wsMessage: ActionPayload = {
+      type: "proposal_action",
+      proposal: "get",
     };
 
     try {
@@ -279,8 +267,9 @@ class RoomStateService {
       return;
     }
 
-    const wsMessage: WebSocketMessage = {
-      type: "get_rounds",
+    const wsMessage: ActionPayload = {
+      type: "round_action",
+      round: "get",
     };
 
     try {
@@ -297,8 +286,9 @@ class RoomStateService {
       return;
     }
 
-    const wsMessage: WebSocketMessage = {
-      type: "get_leaderboard",
+    const wsMessage: ActionPayload = {
+      type: "leaderboard_action",
+      entry: 0, // This will be ignored by the server for get requests
     };
 
     try {

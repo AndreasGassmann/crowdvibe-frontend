@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Round } from "@/types/api";
 import { api } from "@/lib/api";
-import { useUser } from "@/contexts/user-context";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
