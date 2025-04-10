@@ -144,7 +144,7 @@ class RoomStateService {
 
         // Single proposal update
         const newProposal: Proposal = {
-          id: Date.now(),
+          id: Date.now() + Math.floor(Math.random() * 1000),
           room: this.currentRoomSubject.value?.id || "0",
           round: "0", // This will be updated by the server
           user: 0, // This will be updated by the server
