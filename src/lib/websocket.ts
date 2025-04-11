@@ -58,27 +58,19 @@ export class WebSocketClient {
     };
   }
 
-  send(data: ActionPayload) {
-    if (!this.ws) {
-      console.error("WebSocket is not initialized");
+  public send(message: ActionPayload) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.error("WebSocket is not connected");
       return;
     }
 
-    if (this.ws.readyState === WebSocket.CONNECTING) {
-      console.log("WebSocket is connecting, waiting for connection...");
-      setTimeout(() => this.send(data), 100);
-      return;
-    }
+    console.log("Sending WebSocket message:", {
+      message,
+      timestamp: new Date().toISOString(),
+      roomId: this.roomId,
+    });
 
-    if (this.ws.readyState === WebSocket.OPEN) {
-      try {
-        this.ws.send(JSON.stringify(data));
-      } catch (error) {
-        console.error("Error sending message:", error);
-      }
-    } else {
-      console.error("WebSocket is not in OPEN state:", this.ws.readyState);
-    }
+    this.ws.send(JSON.stringify(message));
   }
 
   disconnect() {

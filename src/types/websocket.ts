@@ -22,12 +22,18 @@ export interface ProposalAction {
   proposal: string;
 }
 
+export interface VoteAction {
+  type: "vote_action";
+  proposal_id: number;
+}
+
 // Union type for all action payloads.
 export type ActionPayload =
   | ChatAction
   | LeaderboardAction
   | RoundAction
-  | ProposalAction;
+  | ProposalAction
+  | VoteAction;
 
 // ==========================
 // Backend -> Frontend Broadcast Events

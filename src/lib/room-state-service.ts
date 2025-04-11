@@ -231,8 +231,8 @@ class RoomStateService {
     }
 
     const wsMessage: ActionPayload = {
-      type: "proposal_action",
-      proposal: proposalId.toString(),
+      type: "vote_action",
+      proposal_id: proposalId,
     };
 
     try {
