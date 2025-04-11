@@ -165,7 +165,21 @@ class RoomStateService {
         break;
 
       case "round_broadcast":
-        // Handle round updates
+        console.log("Received round broadcast:", message);
+        const newRound: Round = {
+          id: message.round,
+          room: this.currentRoomSubject.value?.id || "0",
+          counter: message.counter,
+          duration: message.duration,
+          game: message.game,
+          created: message.created,
+          updated: message.created,
+        };
+
+        this.stateSubject.next({
+          ...this.stateSubject.value,
+          currentRound: newRound,
+        });
         break;
 
       case "leaderboard_broadcast":

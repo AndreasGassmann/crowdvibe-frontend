@@ -64,6 +64,7 @@ export interface RoundBroadcast {
   counter: number;
   duration: string; // e.g., "0:01:00"
   created: string; // ISO date string
+  game: string; // game html
 }
 
 export interface ProposalBroadcast {
