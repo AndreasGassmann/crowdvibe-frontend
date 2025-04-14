@@ -3,11 +3,7 @@
 import { BehaviorSubject, Observable } from "rxjs";
 import { WebSocketClient } from "./websocket";
 import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
-import type {
-  ActionPayload,
-  BroadcastEvent,
-  LeaderboardAction,
-} from "../types/websocket";
+import type { ActionPayload, BroadcastEvent } from "../types/websocket";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -31,6 +27,11 @@ class RoomStateService {
   });
   private currentRoomSubject = new BehaviorSubject<Room | null>(null);
   private messageHandlers: ((message: BroadcastEvent) => void)[] = [];
+  private pendingMessages: Array<{
+    message: ActionPayload;
+    errorMessage: string;
+  }> = [];
+  private connecting = false;
 
   private constructor() {}
 
@@ -49,8 +50,9 @@ class RoomStateService {
     return this.currentRoomSubject.asObservable();
   }
 
-  public connect(roomId: string) {
+  public connect(roomId: string, messageToQueue?: ActionPayload) {
     console.log("Connecting to room:", roomId);
+    this.connecting = true;
 
     // Only disconnect if we're connecting to a different room
     if (this.client && this.currentRoomSubject.value?.id !== roomId) {
@@ -61,6 +63,16 @@ class RoomStateService {
     // If we already have a client for this room, don't create a new one
     if (this.client && this.currentRoomSubject.value?.id === roomId) {
       console.log("Already connected to this room");
+      this.connecting = false;
+
+      // If there's a message to queue, send it now
+      if (messageToQueue) {
+        this.client.send(messageToQueue);
+      }
+
+      // Process any pending messages
+      this.processPendingMessages();
+
       return;
     }
 
@@ -88,39 +100,74 @@ class RoomStateService {
       },
       (event) => {
         console.log("WebSocket closed:", event);
+        this.connecting = false;
       }
     );
 
     this.client.connect();
+
+    // Set up a connection success handler
+    setTimeout(() => {
+      if (this.client && this.client.isConnected()) {
+        console.log(
+          "WebSocket connection successful, processing pending messages"
+        );
+        this.connecting = false;
+
+        // If there's a message to queue, send it now
+        if (messageToQueue && this.client) {
+          this.client.send(messageToQueue);
+        }
+
+        // Process pending messages after a short delay to ensure connection is stable
+        this.processPendingMessages();
+      }
+    }, 500); // Short delay to check connection status
   }
 
   public disconnect() {
     console.log("Disconnecting WebSocket");
+    this.connecting = false;
     if (this.client) {
       this.client.disconnect();
       this.client = null;
     }
     this.currentRoomSubject.next(null);
+    // Clear pending messages when disconnecting
+    this.pendingMessages = [];
   }
 
-  public sendMessage(message: string) {
-    console.log("Attempting to send message:", message);
-    if (!this.client || !this.client.isConnected()) {
-      console.error("WebSocket is not connected");
+  // Process all pending messages
+  private processPendingMessages() {
+    if (this.pendingMessages.length === 0 || !this.client) {
       return;
     }
 
+    console.log(`Processing ${this.pendingMessages.length} pending messages`);
+
+    // Create a copy of the pending messages and clear the queue
+    const messages = [...this.pendingMessages];
+    this.pendingMessages = [];
+
+    // Process each message
+    messages.forEach(({ message, errorMessage }) => {
+      if (this.client) {
+        try {
+          this.client.send(message);
+        } catch (error) {
+          console.error(errorMessage, error);
+        }
+      }
+    });
+  }
+
+  public sendMessage(message: string) {
     const wsMessage: ActionPayload = {
       type: "chat_action",
       message,
     };
 
-    try {
-      console.log("Sending WebSocket message:", wsMessage);
-      this.client.send(wsMessage);
-    } catch (error) {
-      console.error("Failed to send message:", error);
-    }
+    this.sendAction(wsMessage, "Failed to send message");
   }
 
   private handleWebSocketMessage(message: BroadcastEvent) {
@@ -275,129 +322,96 @@ class RoomStateService {
   }
 
   public createProposal(text: string) {
-    if (!this.client || !this.client.isConnected()) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-
     const wsMessage: ActionPayload = {
       type: "proposal_action",
       proposal: text,
     };
 
-    try {
-      this.client.send(wsMessage);
-    } catch (error) {
-      console.error("Failed to create proposal:", error);
-    }
+    this.sendAction(wsMessage, "Failed to create proposal");
   }
 
   public vote(proposalId: string) {
-    if (!this.client || !this.client.isConnected()) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-
     const wsMessage: ActionPayload = {
       type: "vote_action",
       proposal_id: proposalId,
     };
 
-    try {
-      this.client.send(wsMessage);
-    } catch (error) {
-      console.error("Failed to vote:", error);
-    }
+    this.sendAction(wsMessage, "Failed to vote");
   }
 
   public deleteVote(voteId: string) {
-    if (!this.client || !this.client.isConnected()) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-
     const wsMessage: ActionPayload = {
       type: "unvote_action",
       proposal_id: voteId,
     };
 
-    try {
-      this.client.send(wsMessage);
-    } catch (error) {
-      console.error("Failed to delete vote:", error);
-    }
+    this.sendAction(wsMessage, "Failed to delete vote");
   }
 
   public requestProposals() {
-    if (!this.client || !this.client.isConnected()) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-
     const wsMessage: ActionPayload = {
       type: "proposal_action",
       proposal: "get",
     };
 
-    try {
-      this.client.send(wsMessage);
-    } catch (error) {
-      console.error("Failed to request proposals:", error);
-    }
+    this.sendAction(wsMessage, "Failed to request proposals");
   }
 
   public requestRounds() {
-    if (!this.client || !this.client.isConnected()) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-
     const wsMessage: ActionPayload = {
       type: "round_action",
       round: "get",
     };
 
-    try {
-      this.client.send(wsMessage);
-    } catch (error) {
-      console.error("Failed to request rounds:", error);
-    }
+    this.sendAction(wsMessage, "Failed to request rounds");
   }
 
   public requestLeaderboard() {
-    if (!this.client || !this.client.isConnected()) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-
     const wsMessage: ActionPayload = {
       type: "leaderboard_action",
       entry: 0, // This will be ignored by the server for get requests
     };
 
-    try {
-      this.client.send(wsMessage);
-    } catch (error) {
-      console.error("Failed to request leaderboard:", error);
-    }
+    this.sendAction(wsMessage, "Failed to request leaderboard");
   }
 
   public createLeaderboardEntry(score: number) {
-    console.log("Creating leaderboard entry 2:", score);
-    if (!this.client || !this.client.isConnected()) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-
-    const wsMessage: LeaderboardAction = {
+    const wsMessage: ActionPayload = {
       type: "leaderboard_action",
       entry: score,
     };
 
+    this.sendAction(wsMessage, "Failed to create leaderboard entry");
+  }
+
+  // Helper method to send actions and handle errors consistently
+  private sendAction(message: ActionPayload, errorMessage: string) {
+    // If client doesn't exist yet or we're in the process of connecting, queue the message
+    if (!this.client || this.connecting) {
+      console.warn("WebSocket client not ready, queueing message for later");
+
+      // Queue the message even if no room is explicitly set yet
+      // We'll use a default room ID if none is set
+      const roomId =
+        this.currentRoomSubject.value?.id ||
+        "9675eee6-7e4b-4143-8b55-96fd47e5a748"; // Default room ID
+
+      // Queue the message for later processing
+      this.pendingMessages.push({ message, errorMessage });
+
+      // If we don't have a client yet, start the connection
+      if (!this.client) {
+        console.log("Connecting to room (auto):", roomId);
+        this.connect(roomId);
+      }
+
+      return;
+    }
+
     try {
-      this.client.send(wsMessage);
+      this.client.send(message);
     } catch (error) {
-      console.error("Failed to create leaderboard entry:", error);
+      console.error(errorMessage, error);
     }
   }
 }

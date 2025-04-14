@@ -14,6 +14,7 @@ export class WebSocketClient {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000; // Start with 1 second delay
   private lastSentMessage: ActionPayload | null = null;
+  private messageQueue: ActionPayload[] = []; // Queue for messages while connecting
 
   constructor(
     private roomId: string,
@@ -51,6 +52,9 @@ export class WebSocketClient {
       this._isConnected = true;
       this.reconnectAttempts = 0;
       this.reconnectDelay = 1000;
+
+      // Process any messages that were queued while connecting
+      this.processQueue();
 
       // If we have a pending message that failed, try to resend it
       if (this.lastSentMessage) {
@@ -106,8 +110,32 @@ export class WebSocketClient {
     };
   }
 
+  private processQueue() {
+    if (this.messageQueue.length > 0) {
+      console.log(`Processing ${this.messageQueue.length} queued messages`);
+
+      // Create a copy of the queue and clear it before processing
+      const queueCopy = [...this.messageQueue];
+      this.messageQueue = [];
+
+      // Process each message in the queue
+      queueCopy.forEach((message) => {
+        this.send(message);
+      });
+    }
+  }
+
   public send(message: ActionPayload) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.log("WebSocket not connected, queueing message:", message);
+
+      // If connecting, queue the message
+      if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+        this.messageQueue.push(message);
+        return;
+      }
+
+      // If closed or closing, save as last message to send on reconnect
       console.error("WebSocket is not connected");
       this.lastSentMessage = message; // Save the message to retry after reconnection
       return;
@@ -134,6 +162,7 @@ export class WebSocketClient {
       this.reconnectTimeout = null;
     }
     this.lastSentMessage = null; // Clear any pending messages
+    this.messageQueue = []; // Clear message queue
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -143,5 +172,14 @@ export class WebSocketClient {
 
   public isConnected(): boolean {
     return this._isConnected;
+  }
+
+  /**
+   * Explicitly queue a message to be sent once the connection is established
+   * This is useful when the client wants to send messages before the connection is ready
+   */
+  public queueMessage(message: ActionPayload) {
+    console.log("Explicitly queueing message for later delivery:", message);
+    this.messageQueue.push(message);
   }
 }
