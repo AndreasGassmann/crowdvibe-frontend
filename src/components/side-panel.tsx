@@ -12,23 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Trophy } from "lucide-react";
-import { Message, Proposal } from "@/types/api";
+import { Message, Proposal, Leaderboard } from "@/types/api";
 import * as Tabs from "@radix-ui/react-tabs";
 import { roomStateService } from "@/lib/room-state-service";
 import { storage } from "@/lib/storage";
 
-// Sample leaderboard data
-const leaderboardData = [
-  { id: 1, name: "Private Cheetah", score: 850, rank: 1 },
-  { id: 2, name: "Husky Sheep", score: 720, rank: 2 },
-  { id: 3, name: "Eventual Rat", score: 680, rank: 3 },
-  { id: 4, name: "Curious Fox", score: 560, rank: 4 },
-  { id: 5, name: "Silent Eagle", score: 490, rank: 5 },
-];
-
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [leaderboard, setLeaderboard] = useState<Leaderboard[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const currentUsername = storage.getUsername();
 
@@ -36,10 +28,12 @@ export default function SidePanel() {
     const subscription = roomStateService.getState().subscribe((state) => {
       setMessages(state.messages);
       setProposals(state.proposals);
+      setLeaderboard(state.leaderboard);
     });
 
-    // Request initial proposals
+    // Request initial proposals and leaderboard
     roomStateService.requestProposals();
+    roomStateService.requestLeaderboard();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -97,25 +91,31 @@ export default function SidePanel() {
                   <div className="col-span-7">Player</div>
                   <div className="col-span-4 text-right">Score</div>
                 </div>
-                {leaderboardData.map((player) => (
-                  <div
-                    key={player.id}
-                    className="grid grid-cols-12 py-3 border-b border-gray-100 dark:border-gray-800 items-center"
-                  >
-                    <div className="col-span-1 font-bold">{player.rank}</div>
-                    <div className="col-span-7 flex items-center gap-2">
-                      <Avatar>
-                        <AvatarFallback>
-                          {player.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{player.name}</span>
+                {leaderboard.length > 0 ? (
+                  leaderboard.map((entry, index) => (
+                    <div
+                      key={entry.id}
+                      className="grid grid-cols-12 py-3 border-b border-gray-100 dark:border-gray-800 items-center"
+                    >
+                      <div className="col-span-1 font-bold">{index + 1}</div>
+                      <div className="col-span-7 flex items-center gap-2">
+                        <Avatar>
+                          <AvatarFallback>
+                            {entry.username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{entry.username}</span>
+                      </div>
+                      <div className="col-span-4 text-right font-bold">
+                        {entry.score}
+                      </div>
                     </div>
-                    <div className="col-span-4 text-right font-bold">
-                      {player.score}
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No entries yet. Play the game to earn points!
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>

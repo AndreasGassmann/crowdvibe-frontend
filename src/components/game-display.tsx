@@ -48,9 +48,12 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
       console.log("handleMessage", event);
 
       try {
+        console.log("event.data", event.data);
         const score = Number(event.data);
-        if (typeof score === "number" && score > 0 && currentRound) {
+        console.log("score", score);
+        if (typeof score === "number" && !isNaN(score) && currentRound) {
           // Create or update leaderboard entry via websocket
+          console.log("Creating leaderboard entry:", score);
           roomStateService.createLeaderboardEntry(score);
         }
       } catch (error) {

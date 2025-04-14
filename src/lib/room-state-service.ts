@@ -3,7 +3,11 @@
 import { BehaviorSubject, Observable } from "rxjs";
 import { WebSocketClient } from "./websocket";
 import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
-import type { ActionPayload, BroadcastEvent } from "../types/websocket";
+import type {
+  ActionPayload,
+  BroadcastEvent,
+  LeaderboardAction,
+} from "../types/websocket";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -198,7 +202,42 @@ class RoomStateService {
         break;
 
       case "leaderboard_broadcast":
-        // Handle leaderboard updates
+        console.log("Received leaderboard broadcast:", message);
+        const currentLeaderboard = this.stateSubject.value.leaderboard;
+
+        const newEntry: Leaderboard = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          room: this.currentRoomSubject.value?.id || "0",
+          round: this.stateSubject.value.currentRound?.id || "0",
+          user: 0, // This will be updated by the server
+          username: message.username,
+          score: message.score,
+          created: message.created,
+          updated: message.created,
+        };
+
+        // Update existing entry or add new one
+        const userEntryIndex = currentLeaderboard.findIndex(
+          (entry) => entry.username === message.username
+        );
+
+        let updatedLeaderboard;
+        if (userEntryIndex >= 0) {
+          // Update existing entry
+          updatedLeaderboard = [...currentLeaderboard];
+          updatedLeaderboard[userEntryIndex] = newEntry;
+        } else {
+          // Add new entry
+          updatedLeaderboard = [...currentLeaderboard, newEntry];
+        }
+
+        // Sort leaderboard by score in descending order
+        updatedLeaderboard.sort((a, b) => b.score - a.score);
+
+        this.stateSubject.next({
+          ...this.stateSubject.value,
+          leaderboard: updatedLeaderboard,
+        });
         break;
     }
   }
@@ -344,12 +383,13 @@ class RoomStateService {
   }
 
   public createLeaderboardEntry(score: number) {
+    console.log("Creating leaderboard entry 2:", score);
     if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
 
-    const wsMessage: ActionPayload = {
+    const wsMessage: LeaderboardAction = {
       type: "leaderboard_action",
       entry: score,
     };
