@@ -7,6 +7,7 @@ export interface Message {
   message: string;
   created: string;
   updated: string;
+  type?: "user" | "system";
 }
 
 export interface Proposal {

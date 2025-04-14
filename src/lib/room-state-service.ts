@@ -184,6 +184,7 @@ class RoomStateService {
           message: message.message,
           created: message.created,
           updated: message.created,
+          type: "user", // Set type for user messages
         };
 
         console.log("Adding new message to state:", newMessage);
@@ -251,10 +252,24 @@ class RoomStateService {
           (proposal) => proposal.round === message.id
         );
 
+        // Add system message for new round
+        const systemMessage: Message = {
+          id: `sys-${Date.now()}`,
+          room: this.currentRoomSubject.value?.id || "0",
+          user: 0,
+          username: "System",
+          first_name: "System",
+          message: `New Round #${newRound.counter} started!`,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+          type: "system",
+        };
+
         this.stateSubject.next({
           ...this.stateSubject.value,
           currentRound: newRound,
           proposals: currentRoundProposals,
+          messages: [...this.stateSubject.value.messages, systemMessage], // Add system message
         });
         break;
 

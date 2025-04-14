@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardHeader,
@@ -15,6 +15,7 @@ import { Send, Trophy, ListChecks, MessageSquare } from "lucide-react";
 import { Message, Proposal, Leaderboard } from "@/types/api";
 import { roomStateService } from "@/lib/room-state-service";
 import { storage } from "@/lib/storage";
+import { formatDistanceToNow } from "date-fns";
 
 export default function SidePanel() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -22,6 +23,7 @@ export default function SidePanel() {
   const [leaderboard, setLeaderboard] = useState<Leaderboard[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const currentUsername = storage.getUsername();
+  const chatContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const subscription = roomStateService.getState().subscribe((state) => {
@@ -32,6 +34,12 @@ export default function SidePanel() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (chatContentRef.current) {
+      chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const handleVote = (proposalId: string) => {
     roomStateService.vote(proposalId);
@@ -192,10 +200,28 @@ export default function SidePanel() {
             Chat
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
+        <CardContent
+          ref={chatContentRef}
+          className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0"
+        >
           {messages.length > 0 ? (
             messages.map((message) => {
+              if (message.type === "system") {
+                return (
+                  <div
+                    key={message.id}
+                    className="text-center text-xs italic text-gray-500 dark:text-gray-400 py-1"
+                  >
+                    {message.message}
+                  </div>
+                );
+              }
+
               const isOwnMessage = message.username === currentUsername;
+              const timestamp = formatDistanceToNow(new Date(message.created), {
+                addSuffix: true,
+              });
+
               return (
                 <div
                   key={message.id}
@@ -203,22 +229,31 @@ export default function SidePanel() {
                     isOwnMessage ? "flex-row-reverse space-x-reverse" : ""
                   }`}
                 >
-                  <Avatar className="h-5 w-5 flex-shrink-0">
+                  <Avatar className="h-5 w-5 flex-shrink-0 mt-1">
                     <AvatarFallback className="text-xs">
                       {message.first_name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div
-                    className={`p-1.5 rounded ${
-                      isOwnMessage
-                        ? "bg-blue-100 dark:bg-blue-900"
-                        : "bg-gray-200 dark:bg-gray-700"
+                    className={`flex flex-col ${
+                      isOwnMessage ? "items-end" : "items-start"
                     }`}
                   >
-                    <p className="font-medium text-xs">
-                      {isOwnMessage ? "You" : message.first_name}
-                    </p>
-                    <p className="break-words">{message.message}</p>
+                    <div
+                      className={`p-1.5 rounded ${
+                        isOwnMessage
+                          ? "bg-blue-100 dark:bg-blue-900"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      }`}
+                    >
+                      <p className="font-medium text-xs">
+                        {isOwnMessage ? "You" : message.first_name}
+                      </p>
+                      <p className="break-words">{message.message}</p>
+                    </div>
+                    <span className="text-xxs text-gray-400 dark:text-gray-500 mt-0.5 px-1">
+                      {timestamp}
+                    </span>
                   </div>
                 </div>
               );
