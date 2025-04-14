@@ -41,10 +41,11 @@ export interface Vote {
 
 export interface Round {
   id: string;
-  room: string;
+  roomId: string;
   counter: number;
   duration: string;
   game: string | null;
+  gameUrl: string | null;
   created: string;
   updated: string;
 }

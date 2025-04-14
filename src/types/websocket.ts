@@ -66,6 +66,7 @@ export interface LeaderboardBroadcast {
 
 export interface RoundBroadcast {
   type: "round_broadcast";
+  id: string;
   round: string; // round game data/information
   counter: number;
   duration: string; // e.g., "0:01:00"

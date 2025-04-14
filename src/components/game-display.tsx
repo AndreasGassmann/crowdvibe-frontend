@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Round } from "@/types/api";
-import { api } from "@/lib/api";
+import { roomStateService } from "@/lib/room-state-service";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -50,12 +50,8 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
       try {
         const score = Number(event.data);
         if (typeof score === "number" && score > 0 && currentRound) {
-          // Create or update leaderboard entry
-          await api.createLeaderboard({
-            room: currentRound.room,
-            round: currentRound.id,
-            score: score,
-          });
+          // Create or update leaderboard entry via websocket
+          roomStateService.createLeaderboardEntry(score);
         }
       } catch (error) {
         console.error("Failed to update leaderboard:", error);

@@ -181,11 +181,12 @@ class RoomStateService {
       case "round_broadcast":
         console.log("Received round broadcast:", message);
         const newRound: Round = {
-          id: message.round,
-          room: this.currentRoomSubject.value?.id || "0",
+          id: message.id,
+          roomId: this.currentRoomSubject.value?.id || "0",
           counter: message.counter,
           duration: message.duration,
-          game: `${API_BASE_URL}/rounds/${message.round}/game/`,
+          game: message.game,
+          gameUrl: `${API_BASE_URL}/rounds/${message.id}/game/`,
           created: message.created,
           updated: message.created,
         };
@@ -339,6 +340,24 @@ class RoomStateService {
       this.client.send(wsMessage);
     } catch (error) {
       console.error("Failed to request leaderboard:", error);
+    }
+  }
+
+  public createLeaderboardEntry(score: number) {
+    if (!this.client || !this.client.isConnected()) {
+      console.error("WebSocket is not connected");
+      return;
+    }
+
+    const wsMessage: ActionPayload = {
+      type: "leaderboard_action",
+      entry: score,
+    };
+
+    try {
+      this.client.send(wsMessage);
+    } catch (error) {
+      console.error("Failed to create leaderboard entry:", error);
     }
   }
 }
