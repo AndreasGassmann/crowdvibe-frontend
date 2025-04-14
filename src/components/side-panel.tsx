@@ -56,8 +56,8 @@ export default function SidePanel({ timeLeft }: SidePanelProps) {
 
   return (
     <div className="w-full h-full flex flex-col px-2 bg-gray-100 dark:bg-gray-950">
-      {/* Leaderboard Section */}
-      <Card className="flex-1 flex flex-col min-h-0 border-t-0 border-x-0 rounded-t-md dark:border-gray-800 py-1 my-1">
+      {/* Leaderboard Section - Basis 1/4 */}
+      <Card className="flex flex-col min-h-0 border-t-0 border-x-0 rounded-t-md dark:border-gray-800 py-0 basis-1/4">
         <CardHeader className="flex-shrink-0 px-1.5 py-1 border-b dark:border-gray-800">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <Trophy className="h-4 w-4 text-yellow-500" />
@@ -106,8 +106,8 @@ export default function SidePanel({ timeLeft }: SidePanelProps) {
         </CardContent>
       </Card>
 
-      {/* Proposals Section */}
-      <Card className="flex-1 flex flex-col min-h-0 border-t border-x-0 rounded-md dark:border-gray-800 py-0">
+      {/* Proposals Section - Basis 3/8 */}
+      <Card className="flex flex-col min-h-0 border-t border-x-0 rounded-md dark:border-gray-800 py-0 basis-3/8">
         <CardHeader className="flex-shrink-0 px-1.5 py-1 border-b dark:border-gray-800">
           {isGenerating ? (
             <div className="flex items-center justify-center text-xs text-gray-500 italic space-x-1.5">
@@ -213,8 +213,8 @@ export default function SidePanel({ timeLeft }: SidePanelProps) {
         </CardFooter>
       </Card>
 
-      {/* Chat Section */}
-      <Card className="flex-1 flex flex-col min-h-0 border-t border-b-0 border-x-0 rounded-b-md dark:border-gray-800 py-1 my-1">
+      {/* Chat Section - Basis 3/8 */}
+      <Card className="flex flex-col min-h-0 border-t border-b-0 border-x-0 rounded-b-md dark:border-gray-800 py-0 basis-3/8">
         <CardHeader className="flex-shrink-0 px-1.5 py-1 border-b dark:border-gray-800">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <MessageSquare className="h-4 w-4 text-green-500" />
