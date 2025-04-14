@@ -10,7 +10,7 @@ export interface Message {
 }
 
 export interface Proposal {
-  id: number;
+  id: string;
   room: string;
   round: string;
   user: number;
@@ -31,7 +31,7 @@ export interface Room {
 }
 
 export interface Vote {
-  id: number;
+  id: string;
   user: number;
   username: string;
   proposal: number;
@@ -50,7 +50,7 @@ export interface Round {
 }
 
 export interface Leaderboard {
-  id: number;
+  id: string;
   room: string;
   round: string;
   user: number;

@@ -5,6 +5,10 @@ import { WebSocketClient } from "./websocket";
 import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import type { ActionPayload, BroadcastEvent } from "../types/websocket";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://crowdvibe.lukeisontheroad.com/api/v1";
+
 export interface RoomState {
   messages: Message[];
   proposals: Proposal[];
@@ -144,22 +148,32 @@ class RoomStateService {
 
         // Single proposal update
         const newProposal: Proposal = {
-          id: Date.now() + Math.floor(Math.random() * 1000),
+          id: message.id,
           room: this.currentRoomSubject.value?.id || "0",
           round: "0", // This will be updated by the server
           user: 0, // This will be updated by the server
           username: message.username,
           first_name: message.first_name,
           text: message.proposal,
-          vote_count: 0,
+          vote_count: message.vote_count,
           user_vote_id: null,
           created: message.created,
           updated: message.created,
         };
 
+        // Update existing proposal or add new one
+        const updatedProposals = currentProposals.map((p) =>
+          p.id === message.id ? newProposal : p
+        );
+
+        // If it's a new proposal, add it to the list
+        if (!currentProposals.some((p) => p.id === message.id)) {
+          updatedProposals.push(newProposal);
+        }
+
         this.stateSubject.next({
           ...this.stateSubject.value,
-          proposals: [...currentProposals, newProposal],
+          proposals: updatedProposals,
         });
 
         break;
@@ -171,7 +185,7 @@ class RoomStateService {
           room: this.currentRoomSubject.value?.id || "0",
           counter: message.counter,
           duration: message.duration,
-          game: message.game,
+          game: `${API_BASE_URL}/rounds/${message.round}/game/`,
           created: message.created,
           updated: message.created,
         };
@@ -238,7 +252,7 @@ class RoomStateService {
     }
   }
 
-  public vote(proposalId: number) {
+  public vote(proposalId: string) {
     if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
@@ -256,15 +270,15 @@ class RoomStateService {
     }
   }
 
-  public deleteVote(voteId: number) {
+  public deleteVote(voteId: string) {
     if (!this.client || !this.client.isConnected()) {
       console.error("WebSocket is not connected");
       return;
     }
 
     const wsMessage: ActionPayload = {
-      type: "proposal_action",
-      proposal: voteId.toString(),
+      type: "unvote_action",
+      proposal_id: voteId,
     };
 
     try {

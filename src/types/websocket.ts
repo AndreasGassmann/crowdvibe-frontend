@@ -24,7 +24,12 @@ export interface ProposalAction {
 
 export interface VoteAction {
   type: "vote_action";
-  proposal_id: number;
+  proposal_id: string;
+}
+
+export interface UnvoteAction {
+  type: "unvote_action";
+  proposal_id: string;
 }
 
 // Union type for all action payloads.
@@ -33,7 +38,8 @@ export type ActionPayload =
   | LeaderboardAction
   | RoundAction
   | ProposalAction
-  | VoteAction;
+  | VoteAction
+  | UnvoteAction;
 
 // ==========================
 // Backend -> Frontend Broadcast Events
@@ -69,11 +75,13 @@ export interface RoundBroadcast {
 
 export interface ProposalBroadcast {
   type: "proposal_broadcast";
+  id: string;
   proposal: string;
   created: string; // ISO date string
   username: string;
   first_name: string;
   last_name: string;
+  vote_count: number;
 }
 
 // Union type for broadcast events.
