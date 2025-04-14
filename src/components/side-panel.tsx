@@ -19,9 +19,16 @@ import { formatDistanceToNow } from "date-fns";
 
 interface SidePanelProps {
   timeLeft: number;
+  showNotification: (
+    title: string,
+    options?: NotificationOptions
+  ) => Notification | null;
 }
 
-export default function SidePanel({ timeLeft }: SidePanelProps) {
+export default function SidePanel({
+  timeLeft,
+  showNotification,
+}: SidePanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [leaderboard, setLeaderboard] = useState<Leaderboard[]>([]);
@@ -29,16 +36,47 @@ export default function SidePanel({ timeLeft }: SidePanelProps) {
   const currentUsername = storage.getUsername();
   const chatContentRef = useRef<HTMLDivElement>(null);
   const isGenerating = timeLeft < 0;
+  const previousMessagesLength = useRef(0);
+  const previousRoundCounter = useRef<number | null>(null);
 
   useEffect(() => {
     const subscription = roomStateService.getState().subscribe((state) => {
+      if (state.messages.length > previousMessagesLength.current) {
+        const newMessages = state.messages.slice(
+          previousMessagesLength.current
+        );
+        newMessages.forEach((msg) => {
+          if (msg.type === "user" && msg.username !== currentUsername) {
+            // Disable notifications for now
+            // showNotification(`New Message from ${msg.first_name}`, {
+            //   body: msg.message,
+            //   icon: "/images/icon.png",
+            // });
+          }
+        });
+      }
+      previousMessagesLength.current = state.messages.length;
       setMessages(state.messages);
+
+      if (
+        state.currentRound &&
+        state.currentRound.counter !== previousRoundCounter.current
+      ) {
+        if (previousRoundCounter.current !== null) {
+          showNotification(`Round ${state.currentRound.counter} Started!`, {
+            body: "A new round has begun.",
+            icon: "/images/icon.png",
+          });
+        }
+        previousRoundCounter.current = state.currentRound.counter;
+      }
+
       setProposals(state.proposals);
       setLeaderboard(state.leaderboard);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [currentUsername, showNotification]);
 
   useEffect(() => {
     if (chatContentRef.current) {

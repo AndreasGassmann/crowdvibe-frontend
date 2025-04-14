@@ -10,12 +10,22 @@ import { useLoading } from "@/contexts/loading-context";
 import { storage } from "@/lib/storage";
 import { roomStateService } from "@/lib/room-state-service";
 import { calculateSecondsLeft } from "@/lib/countdown";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function Home() {
   const [currentRound, setCurrentRound] = useState<Round | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const { isLoading, setIsLoading, isAuthenticated, setIsAuthenticated } =
     useLoading();
+  const { permission, requestPermission, showNotification } =
+    useNotifications();
+
+  // Request notification permission on load
+  useEffect(() => {
+    if (permission === "default") {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
 
   // Subscribe to room state updates
   useEffect(() => {
@@ -112,7 +122,7 @@ export default function Home() {
         </div>
       </div>
       <div className="w-[400px] border-l border-gray-200 dark:border-gray-800">
-        <SidePanel timeLeft={timeLeft} />
+        <SidePanel timeLeft={timeLeft} showNotification={showNotification} />
       </div>
     </div>
   );
