@@ -6,9 +6,9 @@ export function calculateTimeLeft(round: Round | null): string {
   const now = new Date();
   const startTime = new Date(round.created);
 
-  // Parse duration in dd:hh:mm format
-  const [days, hours, minutes] = round.duration.split(":").map(Number);
-  const durationInMs = ((days * 24 + hours) * 60 + minutes) * 60 * 1000;
+  // Parse duration in hh:mm:ss format
+  const [hours, minutes, seconds] = round.duration.split(":").map(Number);
+  const durationInMs = ((hours * 60 + minutes) * 60 + seconds) * 1000;
   const endTime = new Date(startTime.getTime() + durationInMs);
   const diff = endTime.getTime() - now.getTime();
 
@@ -16,14 +16,11 @@ export function calculateTimeLeft(round: Round | null): string {
     return "Round ended";
   }
 
-  const remainingDays = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const remainingHours = Math.floor(
-    (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-  );
+  const remainingHours = Math.floor(diff / (1000 * 60 * 60));
   const remainingMinutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const remainingSeconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-  return `${remainingDays}d ${remainingHours}h ${remainingMinutes}m ${remainingSeconds}s`;
+  return `${remainingHours}h ${remainingMinutes}m ${remainingSeconds}s`;
 }
 
 export function calculateSecondsLeft(round: Round | null): number {
@@ -32,11 +29,12 @@ export function calculateSecondsLeft(round: Round | null): number {
   const now = new Date();
   const startTime = new Date(round.created);
 
-  // Parse duration in dd:hh:mm format
-  const [days, hours, minutes] = round.duration.split(":").map(Number);
-  const durationInMs = ((days * 24 + hours) * 60 + minutes) * 60 * 1000;
+  // Parse duration in hh:mm:ss format
+  const [hours, minutes, seconds] = round.duration.split(":").map(Number);
+  const durationInMs = ((hours * 60 + minutes) * 60 + seconds) * 1000;
   const endTime = new Date(startTime.getTime() + durationInMs);
   const diff = endTime.getTime() - now.getTime();
 
-  return Math.max(0, Math.floor(diff / 1000));
+  // Return actual value (can be negative) instead of clamping to zero
+  return Math.floor(diff / 1000);
 }

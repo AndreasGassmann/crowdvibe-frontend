@@ -156,7 +156,7 @@ class RoomStateService {
           first_name: message.first_name,
           text: message.proposal,
           vote_count: message.vote_count,
-          user_vote_id: null,
+          users_voted: message.users_voted,
           created: message.created,
           updated: message.created,
         };

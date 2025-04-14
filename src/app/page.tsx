@@ -11,9 +11,18 @@ import { storage } from "@/lib/storage";
 import { roomStateService } from "@/lib/room-state-service";
 
 export default function Home() {
-  const [currentRound] = useState<Round | null>(null);
+  const [currentRound, setCurrentRound] = useState<Round | null>(null);
   const { isLoading, setIsLoading, isAuthenticated, setIsAuthenticated } =
     useLoading();
+
+  // Subscribe to room state updates
+  useEffect(() => {
+    const subscription = roomStateService.getState().subscribe((state) => {
+      setCurrentRound(state.currentRound);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -81,12 +90,16 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      <Header currentRound={currentRound} />
-      <main className="flex flex-1 flex-col md:flex-row p-4 gap-4 w-full overflow-hidden">
-        <GameDisplay currentRound={currentRound} />
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <div className="flex flex-col flex-1">
+        <Header currentRound={currentRound} />
+        <div className="flex-1 p-4">
+          <GameDisplay currentRound={currentRound} />
+        </div>
+      </div>
+      <div className="w-[400px] border-l border-gray-200 dark:border-gray-800">
         <SidePanel />
-      </main>
+      </div>
     </div>
   );
 }

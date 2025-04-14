@@ -18,7 +18,7 @@ export interface Proposal {
   first_name: string;
   text: string;
   vote_count: number;
-  user_vote_id: number | null;
+  users_voted: string[];
   created: string;
   updated: string;
 }

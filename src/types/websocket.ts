@@ -82,6 +82,7 @@ export interface ProposalBroadcast {
   first_name: string;
   last_name: string;
   vote_count: number;
+  users_voted: string[];
 }
 
 // Union type for broadcast events.
