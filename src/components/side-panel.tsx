@@ -31,10 +31,6 @@ export default function SidePanel() {
       setLeaderboard(state.leaderboard);
     });
 
-    // Request initial proposals and leaderboard
-    roomStateService.requestProposals();
-    roomStateService.requestLeaderboard();
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -88,8 +84,9 @@ export default function SidePanel() {
               <div className="space-y-2 pr-2 h-full">
                 <div className="grid grid-cols-12 text-sm font-medium text-gray-500 dark:text-gray-400 py-2 border-b">
                   <div className="col-span-1">#</div>
-                  <div className="col-span-7">Player</div>
-                  <div className="col-span-4 text-right">Score</div>
+                  <div className="col-span-6">Player</div>
+                  <div className="col-span-3 text-right">Score</div>
+                  <div className="col-span-2 text-right">Tries</div>
                 </div>
                 {leaderboard.length > 0 ? (
                   leaderboard.map((entry, index) => (
@@ -98,7 +95,7 @@ export default function SidePanel() {
                       className="grid grid-cols-12 py-3 border-b border-gray-100 dark:border-gray-800 items-center"
                     >
                       <div className="col-span-1 font-bold">{index + 1}</div>
-                      <div className="col-span-7 flex items-center gap-2">
+                      <div className="col-span-6 flex items-center gap-2">
                         <Avatar>
                           <AvatarFallback>
                             {entry.username.charAt(0).toUpperCase()}
@@ -106,8 +103,11 @@ export default function SidePanel() {
                         </Avatar>
                         <span className="font-medium">{entry.username}</span>
                       </div>
-                      <div className="col-span-4 text-right font-bold">
+                      <div className="col-span-3 text-right font-bold">
                         {entry.score}
+                      </div>
+                      <div className="col-span-2 text-right font-medium text-gray-500">
+                        {entry.tries}
                       </div>
                     </div>
                   ))

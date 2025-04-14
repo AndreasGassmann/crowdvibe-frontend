@@ -1,7 +1,7 @@
 // components/game-display.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Round } from "@/types/api";
 import { roomStateService } from "@/lib/room-state-service";
@@ -17,28 +17,60 @@ interface GameDisplayProps {
 export default function GameDisplay({ currentRound }: GameDisplayProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [gameUrl, setGameUrl] = useState<string>("");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const previousRoundId = useRef<string | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
 
-    if (currentRound?.game) {
-      // Check if the game file exists
-      fetch(`${API_BASE_URL}/rounds/${currentRound.id}/game/`)
+    // Check if this is a new round (different from the previous one)
+    const isNewRound = currentRound?.id !== previousRoundId.current;
+
+    // Update the previousRoundId ref
+    if (currentRound?.id) {
+      previousRoundId.current = currentRound.id;
+    }
+
+    if (currentRound?.id) {
+      console.log("Loading game for round:", currentRound.id);
+      // Build the URL for the game
+      const gameEndpoint = `${API_BASE_URL}/rounds/${currentRound.id}/game/`;
+
+      // Try to fetch the game
+      fetch(gameEndpoint)
         .then((response) => {
           if (response.ok) {
-            setGameUrl(`${API_BASE_URL}/rounds/${currentRound.id}/game/`);
+            console.log("Game found at:", gameEndpoint);
+            setGameUrl(gameEndpoint);
           } else {
-            setGameUrl("/crowdvibe-frontend/games/sample-game.html");
+            console.warn("Game not found, using placeholder");
+            setGameUrl("/games/sample-game.html");
           }
         })
-        .catch(() => {
-          setGameUrl("/crowdvibe-frontend/games/sample-game.html");
+        .catch((error) => {
+          console.error("Error fetching game:", error);
+          setGameUrl("/games/sample-game.html");
         })
         .finally(() => {
           setIsLoading(false);
+
+          // If this is a new round and we have an iframe reference, reload it
+          if (isNewRound && iframeRef.current && !isLoading) {
+            console.log("Reloading iframe for new round:", currentRound.id);
+
+            // We need to use setTimeout to ensure the src has been updated
+            setTimeout(() => {
+              if (iframeRef.current) {
+                // Force reload by accessing the contentWindow
+                const frame = iframeRef.current;
+                frame.src = frame.src;
+              }
+            }, 100);
+          }
         });
     } else {
-      setGameUrl("/crowdvibe-frontend/games/sample-game.html");
+      console.log("No round ID, using placeholder game");
+      setGameUrl("/games/sample-game.html");
       setIsLoading(false);
     }
   }, [currentRound]);
@@ -75,6 +107,7 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
         ) : (
           <div className="w-full h-full">
             <iframe
+              ref={iframeRef}
               src={gameUrl}
               className="w-full h-full border-0"
               title="Game"

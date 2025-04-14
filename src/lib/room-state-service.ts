@@ -195,13 +195,14 @@ class RoomStateService {
 
       case "proposal_broadcast":
         console.log("Received proposal broadcast:", message);
-        const currentProposals = this.stateSubject.value.proposals;
+        const proposals = this.stateSubject.value.proposals;
+        const currentRound = this.stateSubject.value.currentRound;
 
         // Single proposal update
         const newProposal: Proposal = {
           id: message.id,
           room: this.currentRoomSubject.value?.id || "0",
-          round: "0", // This will be updated by the server
+          round: currentRound?.id || "0", // Use current round ID
           user: 0, // This will be updated by the server
           username: message.username,
           first_name: message.first_name,
@@ -213,20 +214,22 @@ class RoomStateService {
         };
 
         // Update existing proposal or add new one
-        const updatedProposals = currentProposals.map((p) =>
+        const updatedProposals = proposals.map((p) =>
           p.id === message.id ? newProposal : p
         );
 
         // If it's a new proposal, add it to the list
-        if (!currentProposals.some((p) => p.id === message.id)) {
+        if (!proposals.some((p) => p.id === message.id)) {
           updatedProposals.push(newProposal);
         }
+
+        // Sort proposals by vote count in descending order
+        updatedProposals.sort((a, b) => b.vote_count - a.vote_count);
 
         this.stateSubject.next({
           ...this.stateSubject.value,
           proposals: updatedProposals,
         });
-
         break;
 
       case "round_broadcast":
@@ -242,9 +245,16 @@ class RoomStateService {
           updated: message.created,
         };
 
+        // Clear proposals from previous rounds when a new round is received
+        const currentProposals = this.stateSubject.value.proposals;
+        const currentRoundProposals = currentProposals.filter(
+          (proposal) => proposal.round === message.id
+        );
+
         this.stateSubject.next({
           ...this.stateSubject.value,
           currentRound: newRound,
+          proposals: currentRoundProposals,
         });
         break;
 
@@ -259,6 +269,7 @@ class RoomStateService {
           user: 0, // This will be updated by the server
           username: message.username,
           score: message.score,
+          tries: message.tries,
           created: message.created,
           updated: message.created,
         };
@@ -346,33 +357,6 @@ class RoomStateService {
     };
 
     this.sendAction(wsMessage, "Failed to delete vote");
-  }
-
-  public requestProposals() {
-    const wsMessage: ActionPayload = {
-      type: "proposal_action",
-      proposal: "get",
-    };
-
-    this.sendAction(wsMessage, "Failed to request proposals");
-  }
-
-  public requestRounds() {
-    const wsMessage: ActionPayload = {
-      type: "round_action",
-      round: "get",
-    };
-
-    this.sendAction(wsMessage, "Failed to request rounds");
-  }
-
-  public requestLeaderboard() {
-    const wsMessage: ActionPayload = {
-      type: "leaderboard_action",
-      entry: 0, // This will be ignored by the server for get requests
-    };
-
-    this.sendAction(wsMessage, "Failed to request leaderboard");
   }
 
   public createLeaderboardEntry(score: number) {

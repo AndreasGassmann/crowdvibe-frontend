@@ -57,6 +57,7 @@ export interface Leaderboard {
   user: number;
   username: string;
   score: number;
+  tries: number;
   created: string;
   updated: string;
 }

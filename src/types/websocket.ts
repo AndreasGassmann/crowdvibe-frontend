@@ -58,6 +58,7 @@ export interface LeaderboardBroadcast {
   type: "leaderboard_broadcast";
   entry: number; // submitted score value
   score: number; // actual score saved (can be the same as entry)
+  tries: number; // number of tries
   created: string; // ISO date string
   username: string;
   first_name: string;
