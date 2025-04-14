@@ -17,13 +17,18 @@ import { roomStateService } from "@/lib/room-state-service";
 import { storage } from "@/lib/storage";
 import { formatDistanceToNow } from "date-fns";
 
-export default function SidePanel() {
+interface SidePanelProps {
+  timeLeft: number;
+}
+
+export default function SidePanel({ timeLeft }: SidePanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [leaderboard, setLeaderboard] = useState<Leaderboard[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const currentUsername = storage.getUsername();
   const chatContentRef = useRef<HTMLDivElement>(null);
+  const isGenerating = timeLeft < 0;
 
   useEffect(() => {
     const subscription = roomStateService.getState().subscribe((state) => {
@@ -145,6 +150,7 @@ export default function SidePanel() {
                       }
                       size="sm"
                       className="h-6 px-2 text-xs"
+                      disabled={isGenerating}
                       onClick={() =>
                         currentUsername &&
                         proposal.users_voted.includes(currentUsername)
@@ -173,7 +179,7 @@ export default function SidePanel() {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
               const proposalText = formData.get("proposal") as string;
-              if (proposalText.trim()) {
+              if (proposalText.trim() && !isGenerating) {
                 roomStateService.createProposal(proposalText);
                 e.currentTarget.reset();
               }
@@ -182,10 +188,18 @@ export default function SidePanel() {
           >
             <Input
               name="proposal"
-              placeholder="Enter proposal..."
+              placeholder={
+                isGenerating ? "Generating new round..." : "Enter proposal..."
+              }
               className="flex-1 h-7 text-xs px-2"
+              disabled={isGenerating}
             />
-            <Button type="submit" size="icon" className="h-7 w-7">
+            <Button
+              type="submit"
+              size="icon"
+              className="h-7 w-7"
+              disabled={isGenerating}
+            >
               <Send className="h-3.5 w-3.5" />
             </Button>
           </form>

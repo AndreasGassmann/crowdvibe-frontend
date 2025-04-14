@@ -9,9 +9,11 @@ import { Round } from "@/types/api";
 import { useLoading } from "@/contexts/loading-context";
 import { storage } from "@/lib/storage";
 import { roomStateService } from "@/lib/room-state-service";
+import { calculateSecondsLeft } from "@/lib/countdown";
 
 export default function Home() {
   const [currentRound, setCurrentRound] = useState<Round | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
   const { isLoading, setIsLoading, isAuthenticated, setIsAuthenticated } =
     useLoading();
 
@@ -23,6 +25,18 @@ export default function Home() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Calculate time left based on currentRound
+  useEffect(() => {
+    const updateTimer = () => {
+      setTimeLeft(calculateSecondsLeft(currentRound));
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentRound]);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -92,13 +106,13 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <div className="flex flex-col flex-1">
-        <Header currentRound={currentRound} />
+        <Header currentRound={currentRound} timeLeft={timeLeft} />
         <div className="flex-1 p-4">
           <GameDisplay currentRound={currentRound} />
         </div>
       </div>
       <div className="w-[400px] border-l border-gray-200 dark:border-gray-800">
-        <SidePanel />
+        <SidePanel timeLeft={timeLeft} />
       </div>
     </div>
   );

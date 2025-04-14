@@ -1,7 +1,7 @@
 // components/header.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings, LogIn } from "lucide-react";
@@ -9,26 +9,15 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import LoginModal from "@/components/login-modal";
 import SettingsModal from "@/components/settings-modal";
 import { Round } from "@/types/api";
-import { calculateSecondsLeft } from "@/lib/countdown";
 
 interface HeaderProps {
   currentRound: Round | null;
+  timeLeft: number;
 }
 
-export default function Header({ currentRound }: HeaderProps) {
-  const [timeLeft, setTimeLeft] = useState(0);
+export default function Header({ currentRound, timeLeft }: HeaderProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  useEffect(() => {
-    const updateTimeLeft = () => {
-      setTimeLeft(calculateSecondsLeft(currentRound));
-    };
-
-    updateTimeLeft();
-    const interval = setInterval(updateTimeLeft, 1000);
-    return () => clearInterval(interval);
-  }, [currentRound]);
 
   const formatTime = (seconds: number) => {
     if (seconds < 0) return "Generating...";
