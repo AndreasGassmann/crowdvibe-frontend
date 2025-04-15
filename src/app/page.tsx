@@ -1,10 +1,11 @@
 // app/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "@/components/header";
 import GameDisplay from "@/components/game-display";
 import SidePanel from "@/components/side-panel";
+import RoundChangePopup from "@/components/round-change-popup";
 import { Round } from "@/types/api";
 import { useLoading } from "@/contexts/loading-context";
 import { storage } from "@/lib/storage";
@@ -15,6 +16,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 export default function Home() {
   const [currentRound, setCurrentRound] = useState<Round | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const previousRoundCounter = useRef<number | null>(null);
   const { isLoading, setIsLoading, isAuthenticated, setIsAuthenticated } =
     useLoading();
   const { permission, requestPermission, showNotification } =
@@ -30,6 +32,9 @@ export default function Home() {
   // Subscribe to room state updates
   useEffect(() => {
     const subscription = roomStateService.getState().subscribe((state) => {
+      if (state.currentRound) {
+        previousRoundCounter.current = state.currentRound.counter;
+      }
       setCurrentRound(state.currentRound);
     });
 
@@ -124,6 +129,10 @@ export default function Home() {
       <div className="w-[400px] border-l border-gray-200 dark:border-gray-800">
         <SidePanel timeLeft={timeLeft} showNotification={showNotification} />
       </div>
+      <RoundChangePopup
+        currentRound={currentRound}
+        previousRoundCounter={previousRoundCounter.current}
+      />
     </div>
   );
 }
