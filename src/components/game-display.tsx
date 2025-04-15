@@ -73,7 +73,7 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
       setGameUrl("/games/sample-game.html");
       setIsLoading(false);
     }
-  }, [currentRound]);
+  }, [currentRound, isLoading]);
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {

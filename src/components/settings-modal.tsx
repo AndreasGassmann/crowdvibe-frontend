@@ -8,8 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PromptHistoryTab from "@/components/prompt-history-tab";
-import GameHistoryTab from "@/components/game-history-tab";
 import AboutTab from "@/components/about-tab";
 import ProfileSettingsTab from "@/components/profile-settings-tab";
 
