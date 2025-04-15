@@ -423,6 +423,10 @@ class RoomStateService {
     }
 
     try {
+      if (!this.client) {
+        console.error("WebSocket client is not connected");
+        return;
+      }
       this.client.send(message);
     } catch (error) {
       console.error(errorMessage, error);
