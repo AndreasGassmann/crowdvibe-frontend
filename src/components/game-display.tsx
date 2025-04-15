@@ -19,9 +19,11 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
   const [gameUrl, setGameUrl] = useState<string>("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const previousRoundId = useRef<string | null>(null);
+  const isLoadingRef = useRef(true);
 
   useEffect(() => {
     setIsLoading(true);
+    isLoadingRef.current = true;
 
     // Check if this is a new round (different from the previous one)
     const isNewRound = currentRound?.id !== previousRoundId.current;
@@ -53,9 +55,10 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
         })
         .finally(() => {
           setIsLoading(false);
+          isLoadingRef.current = false;
 
           // If this is a new round and we have an iframe reference, reload it
-          if (isNewRound && iframeRef.current && !isLoading) {
+          if (isNewRound && iframeRef.current && !isLoadingRef.current) {
             console.log("Reloading iframe for new round:", currentRound.id);
 
             // We need to use setTimeout to ensure the src has been updated
@@ -72,8 +75,9 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
       console.log("No round ID, using placeholder game");
       setGameUrl("/games/sample-game.html");
       setIsLoading(false);
+      isLoadingRef.current = false;
     }
-  }, [currentRound, isLoading]);
+  }, [currentRound]);
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
