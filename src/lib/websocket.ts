@@ -157,6 +157,9 @@ export class WebSocketClient {
   }
 
   disconnect() {
+    // Prevent any reconnection attempts
+    this.maxReconnectAttempts = 0;
+
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;

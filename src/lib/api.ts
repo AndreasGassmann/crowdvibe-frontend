@@ -66,12 +66,18 @@ export const api = {
     return response.json();
   },
 
-  createRoom: async (name: string): Promise<Room> => {
+  createRoom: async (
+    name: string,
+    initialPrompt?: string,
+    llmModel?: string
+  ): Promise<Room> => {
     const response = await fetch(`${API_BASE_URL}/rooms/`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({
         name,
+        initial_prompt: initialPrompt,
+        llm_model: llmModel,
       }),
     });
     if (!response.ok) throw new Error("Failed to create room");

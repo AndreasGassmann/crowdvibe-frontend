@@ -1,95 +1,101 @@
 // app/page.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import Header from "@/components/header";
-import GameDisplay from "@/components/game-display";
-import SidePanel from "@/components/side-panel";
-import RoundChangePopup from "@/components/round-change-popup";
-import { Round } from "@/types/api";
-import { useLoading } from "@/contexts/loading-context";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Room } from "@/types/api";
+import { api } from "@/lib/api";
 import { storage } from "@/lib/storage";
-import { roomStateService } from "@/lib/room-state-service";
-import { calculateSecondsLeft } from "@/lib/countdown";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useLoading } from "@/contexts/loading-context";
+
+const LLM_MODELS = [
+  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+  { id: "o3-mini-high", name: "O3 Mini High" },
+  { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
+  { id: "claude-3-opus", name: "Claude 3 Opus" },
+];
 
 export default function Home() {
-  const [currentRound, setCurrentRound] = useState<Round | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const previousRoundCounter = useRef<number | null>(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [newRoomName, setNewRoomName] = useState("");
+  const [initialPrompt, setInitialPrompt] = useState("");
+  const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0].id);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const router = useRouter();
   const { isLoading, setIsLoading, isAuthenticated, setIsAuthenticated } =
     useLoading();
-  const { permission, requestPermission, showNotification } =
-    useNotifications();
 
-  // Request notification permission on load
+  // Check authentication status and register user if needed
   useEffect(() => {
-    if (permission === "default") {
-      requestPermission();
-    }
-  }, [permission, requestPermission]);
-
-  // Subscribe to room state updates
-  useEffect(() => {
-    const subscription = roomStateService.getState().subscribe((state) => {
-      if (state.currentRound) {
-        previousRoundCounter.current = state.currentRound.counter;
-      }
-      setCurrentRound(state.currentRound);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Calculate time left based on currentRound
-  useEffect(() => {
-    const updateTimer = () => {
-      setTimeLeft(calculateSecondsLeft(currentRound));
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [currentRound]);
-
-  // Check authentication status on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const username = storage.getUsername();
-        const password = storage.getPassword();
-        if (username && password) {
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error("Failed to check authentication:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [setIsLoading, setIsAuthenticated]);
-
-  // Connect to room when authenticated
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const connectToRoom = async () => {
+    const initializeUser = async () => {
       try {
         setIsLoading(true);
-        // Hardcoded room for now
-        const roomId = "9675eee6-7e4b-4143-8b55-96fd47e5a748";
-        roomStateService.connect(roomId);
+        const username = storage.getUsername();
+        const password = storage.getPassword();
+
+        if (!username || !password) {
+          // Generate new credentials if none exist
+          const newUsername = `user_${Math.random()
+            .toString(36)
+            .substring(2, 8)}`;
+          const newPassword = Math.random().toString(36).substring(2, 12);
+
+          storage.setUsername(newUsername);
+          storage.setPassword(newPassword);
+
+          // Register the new user
+          await api.registerUser(newUsername, newPassword);
+        } else if (!storage.isUserRegistered()) {
+          // Register existing credentials if not registered
+          await api.registerUser(username, password);
+        }
+
+        setIsAuthenticated(true);
+        await fetchRooms();
       } catch (error) {
-        console.error("Failed to connect to room:", error);
+        console.error("Failed to initialize user:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    connectToRoom();
-  }, [isAuthenticated, setIsLoading]);
+
+    initializeUser();
+  }, [setIsLoading, setIsAuthenticated]);
+
+  const fetchRooms = async () => {
+    try {
+      const rooms = await api.getRooms();
+      setRooms(rooms);
+    } catch (error) {
+      console.error("Failed to fetch rooms:", error);
+    }
+  };
+
+  const handleCreateRoom = async () => {
+    if (!newRoomName.trim()) return;
+
+    try {
+      setIsCreatingRoom(true);
+      const newRoom = await api.createRoom(
+        newRoomName.trim(),
+        initialPrompt.trim() || undefined,
+        selectedModel
+      );
+      await fetchRooms();
+      setNewRoomName("");
+      setInitialPrompt("");
+      setSelectedModel(LLM_MODELS[0].id);
+      router.push(`/room/${newRoom.id}`);
+    } catch (error) {
+      console.error("Failed to create room:", error);
+    } finally {
+      setIsCreatingRoom(false);
+    }
+  };
+
+  const handleJoinRoom = (roomId: string) => {
+    router.push(`/room/${roomId}`);
+  };
 
   if (isLoading) {
     return (
@@ -119,20 +125,76 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      <div className="flex flex-col flex-1">
-        <Header currentRound={currentRound} timeLeft={timeLeft} />
-        <div className="flex-1 p-4">
-          <GameDisplay currentRound={currentRound} />
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <div className="flex-1 p-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+            Available Rooms
+          </h1>
+
+          <div className="mb-8">
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  value={newRoomName}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                  placeholder="Enter room name"
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  {LLM_MODELS.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleCreateRoom}
+                  disabled={isCreatingRoom || !newRoomName.trim()}
+                  className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCreatingRoom ? "Creating..." : "Create Room"}
+                </button>
+              </div>
+              <textarea
+                value={initialPrompt}
+                onChange={(e) => setInitialPrompt(e.target.value)}
+                placeholder="Enter initial prompt (optional)"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[100px]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rooms.map((room) => (
+              <div
+                key={room.id}
+                className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handleJoinRoom(room.id)}
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  {room.name}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {room.participant_count || 0} participants
+                </p>
+                {room.llm_model && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Model:{" "}
+                    {LLM_MODELS.find((m) => m.id === room.llm_model)?.name ||
+                      room.llm_model}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-      <div className="w-[400px] border-l border-gray-200 dark:border-gray-800">
-        <SidePanel timeLeft={timeLeft} showNotification={showNotification} />
-      </div>
-      <RoundChangePopup
-        currentRound={currentRound}
-        previousRoundCounter={previousRoundCounter.current}
-      />
     </div>
   );
 }

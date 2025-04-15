@@ -126,14 +126,29 @@ class RoomStateService {
   }
 
   public disconnect() {
-    console.log("Disconnecting WebSocket");
+    // Set connecting to false first to prevent any reconnection attempts
     this.connecting = false;
+
+    console.log("Disconnecting WebSocket and resetting state");
+
+    // Reset state to initial values
+    this.stateSubject.next({
+      messages: [],
+      proposals: [],
+      currentRound: null,
+      leaderboard: [],
+    });
+
+    // Clear current room
+    this.currentRoomSubject.next(null);
+
+    // Disconnect WebSocket client
     if (this.client) {
       this.client.disconnect();
       this.client = null;
     }
-    this.currentRoomSubject.next(null);
-    // Clear pending messages when disconnecting
+
+    // Clear pending messages
     this.pendingMessages = [];
   }
 

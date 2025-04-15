@@ -27,6 +27,8 @@ export interface Proposal {
 export interface Room {
   id: string;
   name: string;
+  initial_prompt?: string;
+  llm_model?: string;
   created: string;
   updated: string;
   participant_count?: number;
