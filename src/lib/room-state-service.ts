@@ -283,6 +283,7 @@ class RoomStateService {
           round: this.stateSubject.value.currentRound?.id || "0",
           user: 0, // This will be updated by the server
           username: message.username,
+          first_name: message.first_name,
           score: message.score,
           tries: message.tries,
           created: message.created,

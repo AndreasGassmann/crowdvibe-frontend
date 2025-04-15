@@ -57,6 +57,7 @@ export interface Leaderboard {
   round: string;
   user: number;
   username: string;
+  first_name: string;
   score: number;
   tries: number;
   created: string;

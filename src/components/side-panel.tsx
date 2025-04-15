@@ -114,17 +114,28 @@ export default function SidePanel({
               leaderboard.map((entry, index) => (
                 <div
                   key={entry.id}
-                  className="grid grid-cols-12 py-1 items-center text-xs"
+                  className={`grid grid-cols-12 py-1 items-center text-xs ${
+                    entry.username === currentUsername
+                      ? "bg-blue-50 dark:bg-blue-900/20 rounded"
+                      : ""
+                  }`}
                 >
                   <div className="col-span-1 font-bold">{index + 1}</div>
                   <div className="col-span-6 flex items-center gap-1.5">
                     <Avatar className="h-5 w-5">
                       <AvatarFallback className="text-xs">
-                        {entry.username.charAt(0).toUpperCase()}
+                        {(entry.first_name || entry.username)
+                          .charAt(0)
+                          .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <span className="font-medium truncate">
-                      {entry.username}
+                      {entry.first_name || entry.username}
+                      {entry.username === currentUsername && (
+                        <span className="ml-1 text-blue-500 dark:text-blue-400">
+                          (you)
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div className="col-span-3 text-right font-bold">
@@ -164,7 +175,11 @@ export default function SidePanel({
             proposals.map((proposal) => (
               <div
                 key={proposal.id}
-                className="p-1.5 border dark:border-gray-700 rounded text-xs"
+                className={`p-1.5 border dark:border-gray-700 rounded text-xs ${
+                  proposal.username === currentUsername
+                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    : ""
+                }`}
               >
                 <div className="flex items-start justify-between mb-1">
                   <div className="flex items-center space-x-1.5">
@@ -176,6 +191,11 @@ export default function SidePanel({
                     <div>
                       <p className="font-medium truncate">
                         {proposal.first_name}
+                        {proposal.username === currentUsername && (
+                          <span className="ml-1 text-blue-500 dark:text-blue-400">
+                            (you)
+                          </span>
+                        )}
                       </p>
                       <p className="text-gray-500 dark:text-gray-400 break-words">
                         {proposal.text}
