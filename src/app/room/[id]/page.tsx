@@ -1,14 +1,17 @@
+import { Metadata } from "next";
 import RoomClient from "./RoomClient";
 
-export async function generateStaticParams(): Promise<{ id: string }[]> {
-  return [{ id: "placeholder" }];
-}
+export const metadata: Metadata = {
+  title: "Room",
+};
 
-export default async function RoomPage({
-  params,
-}: {
+export const dynamic = "force-dynamic";
+
+type Props = {
   params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+};
+
+export default async function RoomPage(props: Props) {
+  const { id } = await props.params;
   return <RoomClient roomId={id} />;
 }
