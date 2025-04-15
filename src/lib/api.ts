@@ -43,6 +43,20 @@ export const api = {
     storage.setFirstnameSet(false);
   },
 
+  updateFirstname: async (firstname: string): Promise<void> => {
+    const username = storage.getUsername();
+    if (!username) throw new Error("User not logged in");
+
+    const response = await fetch(`${API_BASE_URL}/users/`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        first_name: firstname,
+      }),
+    });
+    if (!response.ok) throw new Error("Failed to update firstname");
+  },
+
   // Rooms
   getRooms: async (): Promise<Room[]> => {
     const response = await fetch(`${API_BASE_URL}/rooms/`, {

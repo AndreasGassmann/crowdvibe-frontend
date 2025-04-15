@@ -3,10 +3,25 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { storage } from "@/lib/storage";
+import { api } from "@/lib/api";
 import UsernameModal from "@/components/username-modal";
 
 export default function ProfileSettingsTab() {
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSaveFirstname = async (newFirstname: string) => {
+    try {
+      setIsLoading(true);
+      await api.updateFirstname(newFirstname);
+      storage.setFirstname(newFirstname);
+      setIsUsernameModalOpen(false);
+    } catch (error) {
+      console.error("Failed to update firstname:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -30,6 +45,7 @@ export default function ProfileSettingsTab() {
           <Button
             variant="outline"
             onClick={() => setIsUsernameModalOpen(true)}
+            disabled={isLoading}
           >
             Change
           </Button>
@@ -39,10 +55,7 @@ export default function ProfileSettingsTab() {
       <UsernameModal
         isOpen={isUsernameModalOpen}
         onClose={() => setIsUsernameModalOpen(false)}
-        onSave={(newFirstname) => {
-          storage.setFirstname(newFirstname);
-          setIsUsernameModalOpen(false);
-        }}
+        onSave={handleSaveFirstname}
         title="Change Your Name"
         description="Enter your new name"
       />

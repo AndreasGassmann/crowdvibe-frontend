@@ -30,10 +30,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           defaultValue="profile"
           className="flex-1 overflow-hidden flex flex-col"
         >
-          <TabsList className="grid grid-cols-4">
+          <TabsList className="grid grid-cols-2">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="prompt-history">Prompt History</TabsTrigger>
-            <TabsTrigger value="game-history">Game History</TabsTrigger>
+            {/* <TabsTrigger value="prompt-history">Prompt History</TabsTrigger>
+            <TabsTrigger value="game-history">Game History</TabsTrigger> */}
             <TabsTrigger value="about">About</TabsTrigger>
           </TabsList>
 
@@ -42,13 +42,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <ProfileSettingsTab />
             </TabsContent>
 
-            <TabsContent value="prompt-history" className="h-full">
+            {/* <TabsContent value="prompt-history" className="h-full">
               <PromptHistoryTab />
             </TabsContent>
 
             <TabsContent value="game-history" className="h-full">
               <GameHistoryTab />
-            </TabsContent>
+            </TabsContent> */}
 
             <TabsContent value="about" className="h-full">
               <AboutTab />
