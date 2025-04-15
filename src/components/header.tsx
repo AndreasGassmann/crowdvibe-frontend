@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import SettingsModal from "@/components/settings-modal";
 import { Round } from "@/types/api";
@@ -12,9 +12,14 @@ import { Round } from "@/types/api";
 interface HeaderProps {
   currentRound: Round | null;
   timeLeft: number;
+  onLeaveRoom?: () => void;
 }
 
-export default function Header({ currentRound, timeLeft }: HeaderProps) {
+export default function Header({
+  currentRound,
+  timeLeft,
+  onLeaveRoom,
+}: HeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const formatTime = (seconds: number) => {
@@ -60,6 +65,17 @@ export default function Header({ currentRound, timeLeft }: HeaderProps) {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+
+            {onLeaveRoom && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Leave Room"
+                onClick={onLeaveRoom}
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            )}
 
             <Button
               variant="ghost"

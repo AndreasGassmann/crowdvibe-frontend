@@ -29,6 +29,7 @@ export interface Room {
   name: string;
   created: string;
   updated: string;
+  participant_count?: number;
 }
 
 export interface Vote {
