@@ -4,9 +4,8 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, LogIn } from "lucide-react";
+import { Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import LoginModal from "@/components/login-modal";
 import SettingsModal from "@/components/settings-modal";
 import { Round } from "@/types/api";
 
@@ -16,7 +15,6 @@ interface HeaderProps {
 }
 
 export default function Header({ currentRound, timeLeft }: HeaderProps) {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const formatTime = (seconds: number) => {
@@ -61,16 +59,6 @@ export default function Header({ currentRound, timeLeft }: HeaderProps) {
           </Card>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-              onClick={() => setIsLoginOpen(true)}
-            >
-              <LogIn className="h-4 w-4" />
-              <span>Login</span>
-            </Button>
-
             <ThemeToggle />
 
             <Button
@@ -84,15 +72,6 @@ export default function Header({ currentRound, timeLeft }: HeaderProps) {
           </div>
         </div>
       </header>
-
-      <LoginModal
-        isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
-        onLogin={() => {
-          setIsLoginOpen(false);
-          // Handle login logic here
-        }}
-      />
 
       <SettingsModal
         isOpen={isSettingsOpen}
