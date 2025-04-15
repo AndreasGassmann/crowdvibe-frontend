@@ -1,7 +1,8 @@
 import RoomClient from "./RoomClient";
 
-// Disable static generation for this route
-export const dynamic = "force-dynamic";
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return [{ id: "placeholder" }];
+}
 
 export default async function RoomPage({
   params,
