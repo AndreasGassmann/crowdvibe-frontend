@@ -9,15 +9,16 @@ import { storage } from "@/lib/storage";
 import { useLoading } from "@/contexts/loading-context";
 
 const LLM_MODELS = [
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
-  { id: "o3-mini-high", name: "O3 Mini High" },
-  { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
-  { id: "claude-3-opus", name: "Claude 3 Opus" },
+  { id: "google/gemini-2.5-pro-preview-03-25", name: "Gemini 2.5 Pro" },
+  { id: "openai/gpt-4.1-mini", name: "GPT-4.1 Mini" },
+  { id: "openai/o3-mini-high", name: "O3 Mini High" },
+  { id: "openai/gpt-4.1-nano", name: "GPT-4.1 Nano" },
+  { id: "deepseek/deepseek-r1-distill-qwen-1.5b", name: "DeepSeek R1" },
 ];
 
 export default function Home() {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [newRoomName, setNewRoomName] = useState("");
+  const [roomName, setRoomName] = useState("");
   const [initialPrompt, setInitialPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0].id);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
@@ -72,17 +73,17 @@ export default function Home() {
   };
 
   const handleCreateRoom = async () => {
-    if (!newRoomName.trim()) return;
+    if (!initialPrompt.trim() || !roomName.trim()) return;
 
     try {
       setIsCreatingRoom(true);
       const newRoom = await api.createRoom(
-        newRoomName.trim(),
-        initialPrompt.trim() || undefined,
+        roomName.trim(),
+        initialPrompt.trim(),
         selectedModel
       );
       await fetchRooms();
-      setNewRoomName("");
+      setRoomName("");
       setInitialPrompt("");
       setSelectedModel(LLM_MODELS[0].id);
       router.push(`/room/${newRoom.id}`);
@@ -132,45 +133,7 @@ export default function Home() {
             Available Rooms
           </h1>
 
-          <div className="mb-8">
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  value={newRoomName}
-                  onChange={(e) => setNewRoomName(e.target.value)}
-                  placeholder="Enter room name"
-                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                >
-                  {LLM_MODELS.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {model.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleCreateRoom}
-                  disabled={isCreatingRoom || !newRoomName.trim()}
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCreatingRoom ? "Creating..." : "Create Room"}
-                </button>
-              </div>
-              <textarea
-                value={initialPrompt}
-                onChange={(e) => setInitialPrompt(e.target.value)}
-                placeholder="Enter initial prompt (optional)"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[100px]"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {rooms.map((room) => (
               <div
                 key={room.id}
@@ -192,6 +155,57 @@ export default function Home() {
                 )}
               </div>
             ))}
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Create New Room
+            </h2>
+            <div className="flex gap-4">
+              <input
+                type="text"
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
+                placeholder="Enter room name"
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                {LLM_MODELS.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleCreateRoom}
+                disabled={
+                  isCreatingRoom || !initialPrompt.trim() || !roomName.trim()
+                }
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreatingRoom ? "Creating..." : "Create Room"}
+              </button>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Initial Prompt (Required)
+              </label>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Enter a prompt to generate a game. This will be used to create
+                the game's scenario, rules, and objectives.
+              </p>
+              <textarea
+                value={initialPrompt}
+                onChange={(e) => setInitialPrompt(e.target.value)}
+                placeholder="Enter a prompt to generate a game..."
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[100px]"
+                required
+              />
+            </div>
           </div>
         </div>
       </div>

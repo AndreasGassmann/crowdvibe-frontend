@@ -77,7 +77,7 @@ export const api = {
       body: JSON.stringify({
         name,
         initial_prompt: initialPrompt,
-        llm_model: llmModel,
+        model: llmModel,
       }),
     });
     if (!response.ok) throw new Error("Failed to create room");
