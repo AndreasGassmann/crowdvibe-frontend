@@ -24,7 +24,7 @@ export const api = {
       return;
     }
 
-    const response = await fetch(`${API_BASE_URL}/users/${username}/`, {
+    const response = await fetch(`${API_BASE_URL}/users/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,7 +47,7 @@ export const api = {
     const username = storage.getUsername();
     if (!username) throw new Error("User not logged in");
 
-    const response = await fetch(`${API_BASE_URL}/users/`, {
+    const response = await fetch(`${API_BASE_URL}/users/${username}/`, {
       method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify({
