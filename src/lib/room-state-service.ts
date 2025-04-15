@@ -405,11 +405,12 @@ class RoomStateService {
     if (!this.client || this.connecting) {
       console.warn("WebSocket client not ready, queueing message for later");
 
-      // Queue the message even if no room is explicitly set yet
-      // We'll use a default room ID if none is set
-      const roomId =
-        this.currentRoomSubject.value?.id ||
-        "9675eee6-7e4b-4143-8b55-96fd47e5a748"; // Default room ID
+      // Only queue messages if we have a valid room ID
+      const roomId = this.currentRoomSubject.value?.id;
+      if (!roomId) {
+        console.error("Cannot queue message: No room ID set");
+        return;
+      }
 
       // Queue the message for later processing
       this.pendingMessages.push({ message, errorMessage });
@@ -419,8 +420,6 @@ class RoomStateService {
         console.log("Connecting to room (auto):", roomId);
         this.connect(roomId);
       }
-
-      return;
     }
 
     try {

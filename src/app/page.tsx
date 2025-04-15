@@ -196,7 +196,7 @@ export default function Home() {
               </label>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Enter a prompt to generate a game. This will be used to create
-                the game's scenario, rules, and objectives.
+                the game&apos;s scenario, rules, and objectives.
               </p>
               <textarea
                 value={initialPrompt}
