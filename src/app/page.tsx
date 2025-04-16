@@ -10,6 +10,7 @@ import { useLoading } from "@/contexts/loading-context";
 
 const LLM_MODELS = [
   { id: "google/gemini-2.5-pro-preview-03-25", name: "Gemini 2.5 Pro" },
+  { id: "google/gemini-2.5-pro-exp-03-25:free", name: "Gemini 2.5 Pro (Free)" },
   { id: "openai/gpt-4.1-mini", name: "GPT-4.1 Mini" },
   { id: "openai/o3-mini-high", name: "O3 Mini High" },
   { id: "openai/gpt-4.1-nano", name: "GPT-4.1 Nano" },
