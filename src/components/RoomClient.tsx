@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { roomStateService, RoomState } from "@/lib/room-state-service";
-import { Room, Proposal, Round } from "@/types/api"; // Removed unused Message, Leaderboard for now
+import { Room } from "@/types/api"; // Removed unused Message, Leaderboard for now
 import { storage } from "@/lib/storage";
 import { api } from "@/lib/api";
 import { useLoading } from "@/contexts/loading-context"; // Import loading context
