@@ -66,6 +66,14 @@ export const api = {
     return response.json();
   },
 
+  getRoom: async (id: string): Promise<Room> => {
+    const response = await fetch(`${API_BASE_URL}/rooms/${id}/`, {
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error("Failed to fetch room");
+    return response.json();
+  },
+
   createRoom: async (
     name: string,
     initialPrompt?: string,
