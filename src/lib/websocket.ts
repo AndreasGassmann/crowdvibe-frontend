@@ -106,6 +106,11 @@ export class WebSocketClient {
         }, this.reconnectDelay);
       } else {
         console.error("Max reconnection attempts reached");
+        // Create a proper Event object with error information
+        const errorEvent = new Event("error") as Event & { message: string };
+        errorEvent.message =
+          "Unable to establish WebSocket connection after multiple attempts. Please check your internet connection and try refreshing the page.";
+        this.onError?.(errorEvent);
       }
     };
   }
