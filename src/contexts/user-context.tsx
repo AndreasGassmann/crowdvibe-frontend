@@ -3,17 +3,17 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { storage } from "@/lib/storage";
+import { useLoading } from "./loading-context";
 
 type UserContextType = {
   username: string;
-  isLoading: boolean;
 };
 
 const UserContext = createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const { setIsLoading, setIsAuthenticated } = useLoading();
 
   useEffect(() => {
     const initializeUser = async () => {
@@ -22,34 +22,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const username = storage.getUsername();
         const password = storage.getPassword();
 
+        if (!username || !password) {
+          console.warn("No username/password found in storage during init.");
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+
         // Try to register if not already registered
         if (!storage.isUserRegistered()) {
           try {
-            if (!username || !password) {
-              throw new Error("Username or password is missing");
-            }
             await api.registerUser(username, password);
+            storage.setUserRegistered(true);
           } catch (error) {
-            // If registration fails, it might mean the user already exists
-            console.log("User might already exist, continuing...", error);
+            console.log(
+              "User registration failed (might already exist):",
+              error
+            );
+            storage.setUserRegistered(true);
           }
         }
 
-        setUsername(username || "");
+        setUsername(username);
+        setIsAuthenticated(true);
         setIsLoading(false);
       } catch (error) {
         console.error("Failed to initialize user:", error);
+        setIsAuthenticated(false);
         setIsLoading(false);
       }
     };
 
     initializeUser();
-  }, []);
+  }, [setIsLoading, setIsAuthenticated]);
 
   return (
-    <UserContext.Provider value={{ username, isLoading }}>
-      {children}
-    </UserContext.Provider>
+    <UserContext.Provider value={{ username }}>{children}</UserContext.Provider>
   );
 }
 

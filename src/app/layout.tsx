@@ -20,16 +20,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <UserProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem={false}
-            storageKey="crowdvibe-theme"
-          >
-            <LoadingProvider>{children}</LoadingProvider>
-          </ThemeProvider>
-        </UserProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          storageKey="crowdvibe-theme"
+        >
+          <LoadingProvider>
+            <UserProvider>{children}</UserProvider>
+          </LoadingProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
