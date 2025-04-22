@@ -177,11 +177,39 @@ class RoomStateService {
   }
 
   public sendMessage(message: string) {
+    // Ensure the service is properly initialized
+    if (!this.currentRoomSubject) {
+      console.error("RoomStateService not properly initialized");
+      return;
+    }
+
     const wsMessage: ActionPayload = {
       type: "chat_action",
       message,
     };
 
+    // If we're not connected yet, queue the message
+    if (!this.client || this.connecting) {
+      console.warn("WebSocket client not ready, queueing message for later");
+      this.pendingMessages.push({
+        message: wsMessage,
+        errorMessage: "Failed to send message",
+      });
+      return;
+    }
+
+    // If we have a client but it's not connected, try to connect
+    if (!this.client.isConnected()) {
+      const roomId = this.currentRoomSubject.value?.id;
+      if (!roomId) {
+        console.error("Cannot send message: No room ID set");
+        return;
+      }
+      this.connect(roomId, wsMessage);
+      return;
+    }
+
+    // If we're connected, send the message
     this.sendAction(wsMessage, "Failed to send message");
   }
 

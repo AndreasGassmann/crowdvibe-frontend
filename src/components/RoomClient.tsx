@@ -176,10 +176,9 @@ export default function RoomClient({ roomId }: { roomId: string }) {
         {/* It likely needs roomState (messages, leaderboard) and maybe sendMessage */}
         <SidePanel
           roomState={roomState}
-          sendMessage={roomStateService.sendMessage}
-          timeLeft={timeLeft} // Pass timeLeft if needed in SidePanel
-          showNotification={showNotification} // Pass notification function
-          chatMessagesEndRef={chatMessagesEndRef} // Pass ref if SidePanel manages chat scroll
+          timeLeft={timeLeft}
+          showNotification={showNotification}
+          chatMessagesEndRef={chatMessagesEndRef}
         />
       </div>
       {/* 
