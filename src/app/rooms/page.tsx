@@ -6,6 +6,19 @@ import { Room } from "@/types/api";
 import { api } from "@/lib/api";
 import { storage } from "@/lib/storage";
 import { useLoading } from "@/contexts/loading-context";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 // Changed component name for clarity
 export default function RoomsListPage() {
@@ -13,6 +26,7 @@ export default function RoomsListPage() {
   const [roomName, setRoomName] = useState("");
   const [initialPrompt, setInitialPrompt] = useState("");
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // State for modal
   const router = useRouter();
   const { isLoading, setIsLoading, isAuthenticated, setIsAuthenticated } =
     useLoading();
@@ -77,7 +91,8 @@ export default function RoomsListPage() {
     };
 
     initializeUser();
-  }, [setIsLoading, setIsAuthenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Removed dependencies that might cause re-runs unnecessarily
 
   const fetchRooms = async () => {
     try {
@@ -100,10 +115,12 @@ export default function RoomsListPage() {
       );
       setRoomName("");
       setInitialPrompt("");
+      setIsCreateModalOpen(false); // Close modal on success
       // Update route to use query parameter
       router.push(`/room?id=${newRoom.id}`);
     } catch (error) {
       console.error("Failed to create room:", error);
+      // Potentially show an error message to the user here
     } finally {
       setIsCreatingRoom(false);
     }
@@ -153,70 +170,92 @@ export default function RoomsListPage() {
             Available Rooms
           </h1>
 
-          {/* Room List */}
+          {/* Room List - Changed to ul/li */}
           {rooms.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <ul className="space-y-3 mb-8">
               {rooms.map((room) => (
-                <div
+                <li
                   key={room.id}
-                  className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
+                  className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer flex justify-between items-center"
                   onClick={() => handleJoinRoom(room.id)}
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {room.name}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {room.participant_count ?? 0} participants{" "}
-                  </p>
-                </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {room.participant_count ?? 0} participants
+                  </span>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
-              No rooms available yet. Create one below!
+            <p className="text-gray-600 dark:text-gray-400 mb-8 text-center">
+              No rooms available yet.
             </p>
           )}
 
-          {/* Create New Room Form */}
-          <div className="space-y-4 p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Create New Room
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <input
-                type="text"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                placeholder="Enter room name"
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <button
-                onClick={handleCreateRoom}
-                disabled={
-                  isCreatingRoom || !initialPrompt.trim() || !roomName.trim()
-                }
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isCreatingRoom ? "Creating..." : "Create Room"}
-              </button>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Initial Prompt (Required)
-              </label>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Enter a prompt to generate a game. This will be used to create
-                the game&apos;s scenario, rules, and objectives.
-              </p>
-              <textarea
-                value={initialPrompt}
-                onChange={(e) => setInitialPrompt(e.target.value)}
-                placeholder="e.g., A debate about the best pizza toppings"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[100px] focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
-          </div>
+          {/* Create New Room Button and Modal */}
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto">Create New Room</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800">
+              <DialogHeader>
+                <DialogTitle className="text-gray-900 dark:text-white">
+                  Create New Room
+                </DialogTitle>
+                <DialogDescription>
+                  Enter a name and an initial prompt for your new room. The
+                  prompt guides the game generation.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label
+                    htmlFor="roomName"
+                    className="text-right text-gray-700 dark:text-gray-300"
+                  >
+                    Room Name
+                  </Label>
+                  <Input
+                    id="roomName"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
+                    placeholder="e.g., Epic Debate Club"
+                    className="col-span-3 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label
+                    htmlFor="initialPrompt"
+                    className="text-right pt-2 text-gray-700 dark:text-gray-300"
+                  >
+                    Initial Prompt
+                  </Label>
+                  <Textarea
+                    id="initialPrompt"
+                    value={initialPrompt}
+                    onChange={(e) => setInitialPrompt(e.target.value)}
+                    placeholder="e.g., A debate about the best pizza toppings"
+                    className="col-span-3 min-h-[100px] border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button" // Changed type to button as it's not submitting a standard form
+                  onClick={handleCreateRoom}
+                  disabled={
+                    isCreatingRoom || !initialPrompt.trim() || !roomName.trim()
+                  }
+                  className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {isCreatingRoom ? "Creating..." : "Create Room"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

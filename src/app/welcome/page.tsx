@@ -1,14 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { storage } from "@/lib/storage";
 
 export default function WelcomePage() {
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [firstName, setFirstName] = useState("");
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (storage.hasSetFirstname()) {
+      console.log("First name already set, redirecting to rooms...");
+      router.push("/rooms");
+    } else {
+      setIsCheckingStatus(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +29,7 @@ export default function WelcomePage() {
       setError(null);
       try {
         await api.updateFirstname(firstName.trim());
+        storage.setFirstnameSet(true);
         router.push("/rooms");
       } catch (err: unknown) {
         console.error("Failed to set first name:", err);
@@ -30,6 +43,14 @@ export default function WelcomePage() {
     }
   };
 
+  if (isCheckingStatus) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
@@ -38,9 +59,9 @@ export default function WelcomePage() {
             Welcome to CrowdVibe
           </h1>
           <p className="text-gray-600 mb-8">
-            CrowdVibe is your platform for real-time audience engagement and
-            feedback. Join rooms, participate in live polls, and share your
-            thoughts with the community.
+            CrowdVibe is your platform for real-time collaborative game
+            creations with VibeCoding. Join rooms, play games, vote for
+            suggestions, and share your thoughts with the community.
           </p>
         </div>
 
