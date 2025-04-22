@@ -24,15 +24,12 @@ export default function RoomsListPage() {
         setIsLoading(true);
         const username = storage.getUsername();
         const password = storage.getPassword();
-        const firstName = localStorage.getItem("userFirstName"); // Get first name
 
         if (!username || !password) {
           // Generate new credentials if none exist
-          const newUsername = firstName
-            ? `user_${firstName
-                .replace(/\s+/g, "_")
-                .toLowerCase()}_${Math.random().toString(36).substring(2, 6)}`
-            : `user_${Math.random().toString(36).substring(2, 8)}`;
+          const newUsername = `user_${Math.random()
+            .toString(36)
+            .substring(2, 8)}`;
           const newPassword = Math.random().toString(36).substring(2, 12);
 
           storage.setUsername(newUsername);
@@ -58,11 +55,9 @@ export default function RoomsListPage() {
               "Generating new credentials after registration failure."
             );
             // Generate new credentials if registration fails
-            const newUsername = firstName
-              ? `user_${firstName
-                  .replace(/\s+/g, "_")
-                  .toLowerCase()}_${Math.random().toString(36).substring(2, 6)}`
-              : `user_${Math.random().toString(36).substring(2, 8)}`;
+            const newUsername = `user_${Math.random()
+              .toString(36)
+              .substring(2, 8)}`;
             const newPassword = Math.random().toString(36).substring(2, 12);
             storage.setUsername(newUsername);
             storage.setPassword(newPassword);

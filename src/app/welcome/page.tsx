@@ -2,17 +2,31 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
 export default function WelcomePage() {
   const [firstName, setFirstName] = useState("");
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleStart = (e: React.FormEvent) => {
+  const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (firstName.trim()) {
-      // Store the first name in localStorage for future use
-      localStorage.setItem("userFirstName", firstName.trim());
-      router.push("/rooms");
+    if (firstName.trim() && !isLoading) {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await api.updateFirstname(firstName.trim());
+        router.push("/rooms");
+      } catch (err: unknown) {
+        console.error("Failed to set first name:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to save name. Please try again."
+        );
+        setIsLoading(false);
+      }
     }
   };
 
@@ -50,12 +64,14 @@ export default function WelcomePage() {
             />
           </div>
 
+          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 py-2 px-4 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
-            disabled={!firstName.trim()}
+            disabled={!firstName.trim() || isLoading}
           >
-            Start
+            {isLoading ? "Saving..." : "Start"}
           </button>
         </form>
       </div>
