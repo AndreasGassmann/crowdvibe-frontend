@@ -18,7 +18,6 @@ import { formatDistanceToNow } from "date-fns";
 
 interface SidePanelProps {
   roomState: RoomState;
-  sendMessage: (message: string) => void;
   timeLeft: number;
   showNotification: (
     title: string,
@@ -29,7 +28,6 @@ interface SidePanelProps {
 
 export default function SidePanel({
   roomState,
-  sendMessage,
   timeLeft,
   showNotification,
   chatMessagesEndRef,
@@ -347,8 +345,13 @@ export default function SidePanel({
             onSubmit={(e) => {
               e.preventDefault();
               if (newMessage.trim()) {
-                sendMessage(newMessage);
-                setNewMessage("");
+                try {
+                  roomStateService.sendMessage(newMessage);
+                  setNewMessage("");
+                } catch (error) {
+                  console.error("Failed to send message:", error);
+                  // Optionally show an error message to the user
+                }
               }
             }}
             className="flex space-x-1 w-full"

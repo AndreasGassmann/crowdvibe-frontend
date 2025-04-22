@@ -3,19 +3,17 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { storage } from "@/lib/storage";
-import UsernameModal from "@/components/username-modal";
+import { useLoading } from "./loading-context";
 
 type UserContextType = {
   username: string;
-  isLoading: boolean;
 };
 
 const UserContext = createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
+  const { setIsLoading, setIsAuthenticated } = useLoading();
 
   useEffect(() => {
     const initializeUser = async () => {
@@ -24,58 +22,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const username = storage.getUsername();
         const password = storage.getPassword();
 
+        if (!username || !password) {
+          console.warn("No username/password found in storage during init.");
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+
         // Try to register if not already registered
         if (!storage.isUserRegistered()) {
           try {
-            if (!username || !password) {
-              throw new Error("Username or password is missing");
-            }
             await api.registerUser(username, password);
+            storage.setUserRegistered(true);
           } catch (error) {
-            // If registration fails, it might mean the user already exists
-            console.log("User might already exist, continuing...", error);
+            console.log(
+              "User registration failed (might already exist):",
+              error
+            );
+            storage.setUserRegistered(true);
           }
         }
 
-        setUsername(username || "");
+        setUsername(username);
+        setIsAuthenticated(true);
         setIsLoading(false);
-        setIsUsernameModalOpen(!storage.hasSetFirstname());
       } catch (error) {
         console.error("Failed to initialize user:", error);
+        setIsAuthenticated(false);
         setIsLoading(false);
       }
     };
 
     initializeUser();
-  }, []);
-
-  const handleSaveUsername = async (newFirstname: string) => {
-    try {
-      // Update the first_name in the API
-      console.log("Updating username:", newFirstname);
-      // await api.updateUsername(newFirstname);
-      storage.setFirstnameSet(true);
-      setIsUsernameModalOpen(false);
-    } catch (error) {
-      console.error("Failed to update first name:", error);
-      // If update fails, show the modal again
-      setIsUsernameModalOpen(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [setIsLoading, setIsAuthenticated]);
 
   return (
-    <UserContext.Provider value={{ username, isLoading }}>
-      {children}
-      <UsernameModal
-        isOpen={isUsernameModalOpen}
-        onClose={() => setIsUsernameModalOpen(false)}
-        onSave={handleSaveUsername}
-        title="Set Your Name"
-        description="Please enter your name to personalize your experience"
-      />
-    </UserContext.Provider>
+    <UserContext.Provider value={{ username }}>{children}</UserContext.Provider>
   );
 }
 

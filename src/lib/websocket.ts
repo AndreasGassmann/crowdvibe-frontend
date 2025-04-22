@@ -2,9 +2,9 @@
 
 import { storage } from "./storage";
 import { type ActionPayload, type BroadcastEvent } from "../types/websocket";
+import { WS_URL } from "./config";
 
-const WS_BASE_URL =
-  process.env.NEXT_PUBLIC_WS_URL || "wss://crowdvibe.lukeisontheroad.com/ws";
+const WS_BASE_URL = WS_URL;
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -106,6 +106,11 @@ export class WebSocketClient {
         }, this.reconnectDelay);
       } else {
         console.error("Max reconnection attempts reached");
+        // Create a proper Event object with error information
+        const errorEvent = new Event("error") as Event & { message: string };
+        errorEvent.message =
+          "Unable to establish WebSocket connection after multiple attempts. Please check your internet connection and try refreshing the page.";
+        this.onError?.(errorEvent);
       }
     };
   }
