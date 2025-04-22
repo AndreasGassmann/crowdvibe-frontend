@@ -8,20 +8,10 @@ import { api } from "@/lib/api";
 import { storage } from "@/lib/storage";
 import { useLoading } from "@/contexts/loading-context";
 
-const LLM_MODELS = [
-  { id: "google/gemini-2.5-pro-preview-03-25", name: "Gemini 2.5 Pro" },
-  { id: "google/gemini-2.5-pro-exp-03-25:free", name: "Gemini 2.5 Pro (Free)" },
-  { id: "openai/gpt-4.1-mini", name: "GPT-4.1 Mini" },
-  { id: "openai/o3-mini-high", name: "O3 Mini High" },
-  { id: "openai/gpt-4.1-nano", name: "GPT-4.1 Nano" },
-  { id: "deepseek/deepseek-r1-distill-qwen-1.5b", name: "DeepSeek R1" },
-];
-
 export default function Home() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomName, setRoomName] = useState("");
   const [initialPrompt, setInitialPrompt] = useState("");
-  const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0].id);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const router = useRouter();
   const { isLoading, setIsLoading, isAuthenticated, setIsAuthenticated } =
@@ -80,13 +70,11 @@ export default function Home() {
       setIsCreatingRoom(true);
       const newRoom = await api.createRoom(
         roomName.trim(),
-        initialPrompt.trim(),
-        selectedModel
+        initialPrompt.trim()
       );
       await fetchRooms();
       setRoomName("");
       setInitialPrompt("");
-      setSelectedModel(LLM_MODELS[0].id);
       router.push(`/room/${newRoom.id}`);
     } catch (error) {
       console.error("Failed to create room:", error);
@@ -147,13 +135,6 @@ export default function Home() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {room.participant_count || 0} participants
                 </p>
-                {room.llm_model && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Model:{" "}
-                    {LLM_MODELS.find((m) => m.id === room.llm_model)?.name ||
-                      room.llm_model}
-                  </p>
-                )}
               </div>
             ))}
           </div>
@@ -170,17 +151,6 @@ export default function Home() {
                 placeholder="Enter room name"
                 className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              >
-                {LLM_MODELS.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
-                ))}
-              </select>
               <button
                 onClick={handleCreateRoom}
                 disabled={
