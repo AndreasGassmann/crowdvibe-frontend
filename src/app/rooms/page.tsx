@@ -197,7 +197,9 @@ export default function RoomsListPage() {
           {/* Create New Room Button and Modal */}
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">Create New Room</Button>
+              <Button className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
+                Create New Room
+              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800">
               <DialogHeader>
@@ -249,7 +251,7 @@ export default function RoomsListPage() {
                   disabled={
                     isCreatingRoom || !initialPrompt.trim() || !roomName.trim()
                   }
-                  className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 disabled:opacity-50"
                 >
                   {isCreatingRoom ? "Creating..." : "Create Room"}
                 </Button>
