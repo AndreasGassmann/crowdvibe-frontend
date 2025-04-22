@@ -33,6 +33,12 @@ export default function SidePanel({
   chatMessagesEndRef,
 }: SidePanelProps) {
   const [newMessage, setNewMessage] = useState("");
+  const [personalBests, setPersonalBests] = useState<Record<string, number>>(
+    {}
+  );
+  const [flashingEntries, setFlashingEntries] = useState<Set<string>>(
+    new Set()
+  );
   const currentUsername = storage.getUsername();
   const isGenerating = timeLeft < 0;
   const previousMessagesLength = useRef(0);
@@ -81,6 +87,31 @@ export default function SidePanel({
     }
   }, [roomState.messages, chatMessagesEndRef]);
 
+  // Track personal bests and handle flashing animation
+  useEffect(() => {
+    const newPersonalBests: Record<string, number> = { ...personalBests };
+    const newFlashingEntries = new Set<string>();
+
+    roomState.leaderboard.forEach((entry) => {
+      const previousBest = personalBests[entry.username] || 0;
+      if (entry.score > previousBest) {
+        newPersonalBests[entry.username] = entry.score;
+        newFlashingEntries.add(entry.username);
+      }
+    });
+
+    setPersonalBests(newPersonalBests);
+    setFlashingEntries(newFlashingEntries);
+
+    // Clear flashing after animation duration
+    if (newFlashingEntries.size > 0) {
+      const timer = setTimeout(() => {
+        setFlashingEntries(new Set());
+      }, 2000); // 2 seconds flash duration
+      return () => clearTimeout(timer);
+    }
+  }, [roomState.leaderboard]);
+
   const handleVote = (proposalId: string) => {
     roomStateService.vote(proposalId);
   };
@@ -111,9 +142,13 @@ export default function SidePanel({
               roomState.leaderboard.map((entry, index) => (
                 <div
                   key={entry.id}
-                  className={`grid grid-cols-12 py-1 items-center text-xs ${
+                  className={`grid grid-cols-12 py-1 items-center text-xs transition-all duration-500 ${
                     entry.username === currentUsername
                       ? "bg-blue-50 dark:bg-blue-900/20 rounded"
+                      : ""
+                  } ${
+                    flashingEntries.has(entry.username)
+                      ? "animate-pulse bg-yellow-100 dark:bg-yellow-900/20"
                       : ""
                   }`}
                 >
@@ -137,6 +172,9 @@ export default function SidePanel({
                   </div>
                   <div className="col-span-3 text-right font-bold">
                     {entry.score}
+                    {flashingEntries.has(entry.username) && (
+                      <span className="ml-1 text-yellow-500">🎉</span>
+                    )}
                   </div>
                   <div className="col-span-2 text-right font-medium text-gray-500">
                     {entry.tries}

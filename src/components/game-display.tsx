@@ -84,9 +84,9 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
       console.log("Received message from game iframe:", event);
 
       try {
-        // Handle score updates (existing functionality)
-        if (typeof event.data === "number") {
-          const score = event.data;
+        // Handle score updates
+        if (typeof event.data === "number" || typeof event.data === "string") {
+          const score = Number(event.data);
           console.log("Received score update:", score);
           if (!isNaN(score) && currentRound) {
             roomStateService.createLeaderboardEntry(score);
@@ -96,6 +96,19 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
 
         // Handle multiplayer broadcasts
         if (event.data && typeof event.data === "object") {
+          // Handle score updates that come as objects
+          if (
+            typeof event.data.score === "number" ||
+            typeof event.data.score === "string"
+          ) {
+            const score = Number(event.data.score);
+            console.log("Received score update:", score);
+            if (!isNaN(score) && currentRound) {
+              roomStateService.createLeaderboardEntry(score);
+            }
+          }
+
+          // Handle multiplayer broadcasts
           if (event.data.type === "multiplayer_broadcast" && event.data.data) {
             console.log(
               "Received multiplayer broadcast from game:",
