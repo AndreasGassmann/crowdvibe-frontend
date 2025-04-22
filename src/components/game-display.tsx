@@ -45,12 +45,12 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
             setGameUrl(gameEndpoint);
           } else {
             console.warn("Game not found, using placeholder");
-            setGameUrl("/games/sample-game.html");
+            setGameUrl("");
           }
         })
         .catch((error) => {
           console.error("Error fetching game:", error);
-          setGameUrl("/games/sample-game.html");
+          setGameUrl("");
         })
         .finally(() => {
           setIsLoading(false);
@@ -72,7 +72,7 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
         });
     } else {
       console.log("No round ID, using placeholder game");
-      setGameUrl("/games/sample-game.html");
+      setGameUrl("");
       setIsLoading(false);
       isLoadingRef.current = false;
     }
@@ -107,7 +107,7 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
           <div className="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 dark:border-purple-500"></div>
           </div>
-        ) : (
+        ) : gameUrl ? (
           <div className="w-full h-full">
             <iframe
               ref={iframeRef}
@@ -116,6 +116,13 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
               title="Game"
               sandbox="allow-scripts allow-same-origin"
             />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-gray-100 dark:bg-gray-800">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 dark:border-purple-500 mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-300">
+              The game will be available soon
+            </p>
           </div>
         )}
       </CardContent>
