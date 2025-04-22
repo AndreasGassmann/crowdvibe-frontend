@@ -12,77 +12,76 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Trophy, ListChecks, MessageSquare } from "lucide-react";
-import { Message, Proposal, Leaderboard } from "@/types/api";
-import { roomStateService } from "@/lib/room-state-service";
+import { roomStateService, RoomState } from "@/lib/room-state-service";
 import { storage } from "@/lib/storage";
 import { formatDistanceToNow } from "date-fns";
 
 interface SidePanelProps {
+  roomState: RoomState;
+  sendMessage: (message: string) => void;
   timeLeft: number;
   showNotification: (
     title: string,
     options?: NotificationOptions
   ) => Notification | null;
+  chatMessagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function SidePanel({
+  roomState,
+  sendMessage,
   timeLeft,
   showNotification,
+  chatMessagesEndRef,
 }: SidePanelProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [leaderboard, setLeaderboard] = useState<Leaderboard[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const currentUsername = storage.getUsername();
-  const chatContentRef = useRef<HTMLDivElement>(null);
   const isGenerating = timeLeft < 0;
   const previousMessagesLength = useRef(0);
   const previousRoundCounter = useRef<number | null>(null);
 
   useEffect(() => {
-    const subscription = roomStateService.getState().subscribe((state) => {
-      if (state.messages.length > previousMessagesLength.current) {
-        const newMessages = state.messages.slice(
-          previousMessagesLength.current
-        );
-        newMessages.forEach((msg) => {
-          if (msg.type === "user" && msg.username !== currentUsername) {
-            // Disable notifications for now
-            // showNotification(`New Message from ${msg.first_name}`, {
-            //   body: msg.message,
-            //   icon: "/images/icon.png",
-            // });
-          }
+    if (roomState.messages.length > previousMessagesLength.current) {
+      const newMessages = roomState.messages.slice(
+        previousMessagesLength.current
+      );
+      newMessages.forEach((msg) => {
+        if (msg.type === "user" && msg.username !== currentUsername) {
+          // Disable notifications for now
+          // showNotification(`New Message from ${msg.first_name}`, {
+          //   body: msg.message,
+          //   icon: "/images/icon.png",
+          // });
+        }
+      });
+    }
+    previousMessagesLength.current = roomState.messages.length;
+
+    if (
+      roomState.currentRound &&
+      roomState.currentRound.counter !== previousRoundCounter.current
+    ) {
+      if (previousRoundCounter.current !== null) {
+        showNotification(`Round ${roomState.currentRound.counter} Started!`, {
+          body: "A new round has begun.",
+          icon: "/images/icon.png",
         });
       }
-      previousMessagesLength.current = state.messages.length;
-      setMessages(state.messages);
-
-      if (
-        state.currentRound &&
-        state.currentRound.counter !== previousRoundCounter.current
-      ) {
-        if (previousRoundCounter.current !== null) {
-          showNotification(`Round ${state.currentRound.counter} Started!`, {
-            body: "A new round has begun.",
-            icon: "/images/icon.png",
-          });
-        }
-        previousRoundCounter.current = state.currentRound.counter;
-      }
-
-      setProposals(state.proposals);
-      setLeaderboard(state.leaderboard);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [currentUsername, showNotification]);
+      previousRoundCounter.current = roomState.currentRound.counter;
+    }
+  }, [
+    roomState.messages,
+    roomState.currentRound,
+    currentUsername,
+    showNotification,
+  ]);
 
   useEffect(() => {
-    if (chatContentRef.current) {
-      chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
+    if (chatMessagesEndRef.current) {
+      chatMessagesEndRef.current.scrollTop =
+        chatMessagesEndRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [roomState.messages, chatMessagesEndRef]);
 
   const handleVote = (proposalId: string) => {
     roomStateService.vote(proposalId);
@@ -110,8 +109,8 @@ export default function SidePanel({
               <div className="col-span-3 text-right">Score</div>
               <div className="col-span-2 text-right">Tries</div>
             </div>
-            {leaderboard.length > 0 ? (
-              leaderboard.map((entry, index) => (
+            {roomState.leaderboard.length > 0 ? (
+              roomState.leaderboard.map((entry, index) => (
                 <div
                   key={entry.id}
                   className={`grid grid-cols-12 py-1 items-center text-xs ${
@@ -171,8 +170,8 @@ export default function SidePanel({
           )}
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
-          {proposals.length > 0 ? (
-            proposals.map((proposal) => (
+          {roomState.proposals.length > 0 ? (
+            roomState.proposals.map((proposal) => (
               <div
                 key={proposal.id}
                 className={`p-1.5 border dark:border-gray-700 rounded text-xs ${
@@ -280,11 +279,11 @@ export default function SidePanel({
           </CardTitle>
         </CardHeader>
         <CardContent
-          ref={chatContentRef}
+          ref={chatMessagesEndRef}
           className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0"
         >
-          {messages.length > 0 ? (
-            messages.map((message) => {
+          {roomState.messages.length > 0 ? (
+            roomState.messages.map((message) => {
               if (message.type === "system") {
                 return (
                   <div
@@ -348,7 +347,7 @@ export default function SidePanel({
             onSubmit={(e) => {
               e.preventDefault();
               if (newMessage.trim()) {
-                roomStateService.sendMessage(newMessage);
+                sendMessage(newMessage);
                 setNewMessage("");
               }
             }}
