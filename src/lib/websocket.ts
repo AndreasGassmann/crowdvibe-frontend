@@ -131,8 +131,20 @@ export class WebSocketClient {
   }
 
   public send(message: ActionPayload) {
+    console.log("WebSocket send attempt:", {
+      message,
+      readyState: this.ws?.readyState,
+      isConnected: this._isConnected,
+      timestamp: new Date().toISOString(),
+      roomId: this.roomId,
+    });
+
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.log("WebSocket not connected, queueing message:", message);
+      console.log("WebSocket not connected, queueing message:", {
+        message,
+        readyState: this.ws?.readyState,
+        isConnected: this._isConnected,
+      });
 
       // If connecting, queue the message
       if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {

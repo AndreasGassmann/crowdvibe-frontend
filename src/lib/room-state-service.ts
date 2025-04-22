@@ -176,39 +176,10 @@ class RoomStateService {
   }
 
   public sendMessage(message: string) {
-    // Ensure the service is properly initialized
-    if (!this.currentRoomSubject) {
-      console.error("RoomStateService not properly initialized");
-      return;
-    }
-
     const wsMessage: ActionPayload = {
       type: "chat_action",
       message,
     };
-
-    // If we're not connected yet, queue the message
-    if (!this.client || this.connecting) {
-      console.warn("WebSocket client not ready, queueing message for later");
-      this.pendingMessages.push({
-        message: wsMessage,
-        errorMessage: "Failed to send message",
-      });
-      return;
-    }
-
-    // If we have a client but it's not connected, try to connect
-    if (!this.client.isConnected()) {
-      const roomId = this.currentRoomSubject.value?.id;
-      if (!roomId) {
-        console.error("Cannot send message: No room ID set");
-        return;
-      }
-      this.connect(roomId, wsMessage);
-      return;
-    }
-
-    // If we're connected, send the message
     this.sendAction(wsMessage, "Failed to send message");
   }
 
@@ -428,36 +399,33 @@ class RoomStateService {
 
   // Helper method to send actions and handle errors consistently
   private sendAction(message: ActionPayload, errorMessage: string) {
-    // If client doesn't exist yet or we're in the process of connecting, queue the message
-    if (!this.client || this.connecting) {
-      console.warn("WebSocket client not ready, queueing message for later");
+    console.log("sendAction called with:", { message, errorMessage });
 
-      // Only queue messages if we have a valid room ID
+    // If we don't have a client yet, create one
+    if (!this.client) {
       const roomId = this.currentRoomSubject.value?.id;
       if (!roomId) {
-        console.error("Cannot queue message: No room ID set");
+        console.error("Cannot send message: No room ID set");
         return;
       }
-
-      // Queue the message for later processing
-      this.pendingMessages.push({ message, errorMessage });
-
-      // If we don't have a client yet, start the connection
-      if (!this.client) {
-        console.log("Connecting to room (auto):", roomId);
-        this.connect(roomId);
-      }
+      console.log("Creating new WebSocket client for room:", roomId);
+      this.connect(roomId);
     }
 
+    // Try to send the message directly
     try {
-      if (!this.client) {
-        console.error("WebSocket client is not connected");
+      if (this.client) {
+        console.log("Attempting to send message directly");
+        this.client.send(message);
         return;
       }
-      this.client.send(message);
     } catch (error) {
-      console.error(errorMessage, error);
+      console.error("Error sending message directly:", error);
     }
+
+    // If direct send failed, queue the message
+    console.warn("Message send failed, queueing for later");
+    this.pendingMessages.push({ message, errorMessage });
   }
 }
 

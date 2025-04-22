@@ -345,8 +345,13 @@ export default function SidePanel({
             onSubmit={(e) => {
               e.preventDefault();
               if (newMessage.trim()) {
+                console.log("Form submitted with message:", newMessage);
                 try {
+                  console.log(
+                    "Attempting to send message through roomStateService"
+                  );
                   roomStateService.sendMessage(newMessage);
+                  console.log("Message sent successfully, clearing input");
                   setNewMessage("");
                 } catch (error) {
                   console.error("Failed to send message:", error);
