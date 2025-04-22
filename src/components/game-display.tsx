@@ -5,10 +5,9 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Round } from "@/types/api";
 import { roomStateService } from "@/lib/room-state-service";
+import { API_URL } from "@/lib/config";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://crowdvibe.lukeisontheroad.com/api/v1";
+const API_BASE_URL = API_URL;
 
 interface GameDisplayProps {
   currentRound: Round | null;

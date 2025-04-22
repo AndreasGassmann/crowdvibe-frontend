@@ -4,10 +4,9 @@ import { BehaviorSubject, Observable } from "rxjs";
 import { WebSocketClient } from "./websocket";
 import { Message, Proposal, Room, Round, Leaderboard } from "@/types/api";
 import type { ActionPayload, BroadcastEvent } from "../types/websocket";
+import { API_URL } from "./config";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://crowdvibe.lukeisontheroad.com/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || API_URL;
 
 export interface RoomState {
   messages: Message[];

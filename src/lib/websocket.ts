@@ -2,9 +2,9 @@
 
 import { storage } from "./storage";
 import { type ActionPayload, type BroadcastEvent } from "../types/websocket";
+import { WS_URL } from "./config";
 
-const WS_BASE_URL =
-  process.env.NEXT_PUBLIC_WS_URL || "wss://crowdvibe.lukeisontheroad.com/ws";
+const WS_BASE_URL = WS_URL;
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
