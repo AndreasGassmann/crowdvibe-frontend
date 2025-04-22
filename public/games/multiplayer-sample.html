@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Multiplayer Sample Game</title>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #1a1a1a;
+        color: white;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+      }
+      .game-container {
+        text-align: center;
+        position: relative;
+      }
+      canvas {
+        border: 2px solid white;
+        background-color: #2a2a2a;
+      }
+      #score-display {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 24px;
+        color: white;
+      }
+      .instructions {
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Multiplayer Demo</h1>
+      <canvas id="gameCanvas" width="800" height="400"></canvas>
+      <div id="score-display">Score: 0</div>
+      <div class="instructions">
+        Use arrow keys to move. Your position will be shared with other players!
+      </div>
+    </div>
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const scoreDisplay = document.getElementById("score-display");
+
+      // Game state
+      let score = 0;
+      const players = new Map(); // Store other players' positions
+      const myId = Math.random().toString(36).substr(2, 9); // Generate random ID for this player
+
+      // Local player
+      const player = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        width: 30,
+        height: 30,
+        speed: 5,
+        color: "#4d79ff",
+
+        draw() {
+          ctx.fillStyle = this.color;
+          ctx.fillRect(
+            this.x - this.width / 2,
+            this.y - this.height / 2,
+            this.width,
+            this.height
+          );
+
+          // Draw player ID above the square
+          ctx.fillStyle = "white";
+          ctx.font = "12px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText("You", this.x, this.y - this.height / 2 - 5);
+        },
+
+        move(dx, dy) {
+          // Update position
+          this.x = Math.max(
+            this.width / 2,
+            Math.min(canvas.width - this.width / 2, this.x + dx)
+          );
+          this.y = Math.max(
+            this.height / 2,
+            Math.min(canvas.height - this.height / 2, this.y + dy)
+          );
+
+          // Broadcast position to other players
+          broadcastPosition();
+        },
+      };
+
+      // Function to broadcast player position
+      function broadcastPosition() {
+        const positionData = {
+          eventType: "playerPosition",
+          playerId: myId,
+          x: player.x,
+          y: player.y,
+          timestamp: Date.now(),
+        };
+
+        // Send to parent window
+        window.parent.postMessage(
+          {
+            type: "multiplayer_broadcast",
+            data: positionData,
+          },
+          "*"
+        );
+      }
+
+      // Handle keyboard input
+      const keys = new Set();
+      document.addEventListener("keydown", (e) => keys.add(e.code));
+      document.addEventListener("keyup", (e) => keys.delete(e.code));
+
+      // Handle incoming messages from parent window
+      window.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "multiplayer_event") {
+          const data = event.data.data;
+
+          // Handle player position updates
+          if (data.eventType === "playerPosition" && data.playerId !== myId) {
+            // Update or create other player
+            if (!players.has(data.playerId)) {
+              players.set(data.playerId, {
+                x: data.x,
+                y: data.y,
+                width: 30,
+                height: 30,
+                color: `hsl(${Math.random() * 360}, 70%, 50%)`, // Random color
+                lastUpdate: data.timestamp,
+              });
+            } else {
+              const player = players.get(data.playerId);
+              player.x = data.x;
+              player.y = data.y;
+              player.lastUpdate = data.timestamp;
+            }
+          }
+        }
+      });
+
+      // Game loop
+      function gameLoop() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Handle input
+        if (keys.has("ArrowLeft")) player.move(-player.speed, 0);
+        if (keys.has("ArrowRight")) player.move(player.speed, 0);
+        if (keys.has("ArrowUp")) player.move(0, -player.speed);
+        if (keys.has("ArrowDown")) player.move(0, player.speed);
+
+        // Draw local player
+        player.draw();
+
+        // Draw other players
+        const now = Date.now();
+        players.forEach((otherPlayer, id) => {
+          // Remove players that haven't updated in 5 seconds
+          if (now - otherPlayer.lastUpdate > 5000) {
+            players.delete(id);
+            return;
+          }
+
+          // Draw other player
+          ctx.fillStyle = otherPlayer.color;
+          ctx.fillRect(
+            otherPlayer.x - otherPlayer.width / 2,
+            otherPlayer.y - otherPlayer.height / 2,
+            otherPlayer.width,
+            otherPlayer.height
+          );
+
+          // Draw player ID
+          ctx.fillStyle = "white";
+          ctx.font = "12px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            `Player ${id.substr(0, 4)}`,
+            otherPlayer.x,
+            otherPlayer.y - otherPlayer.height / 2 - 5
+          );
+        });
+
+        // Request next frame
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start game
+      gameLoop();
+
+      // Broadcast initial position
+      broadcastPosition();
+    </script>
+  </body>
+</html>

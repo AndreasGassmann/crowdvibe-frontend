@@ -15,6 +15,18 @@ export interface RoomState {
   leaderboard: Leaderboard[];
 }
 
+// Type for multiplayer data that can be sent/received
+export interface MultiplayerData {
+  eventType: string;
+  playerId?: string;
+  [key: string]: unknown;
+}
+
+type MultiplayerEventHandler = (event: {
+  type: string;
+  data: MultiplayerData;
+}) => void;
+
 class RoomStateService {
   private static instance: RoomStateService;
   private client: WebSocketClient | null = null;
@@ -26,6 +38,7 @@ class RoomStateService {
   });
   private currentRoomSubject = new BehaviorSubject<Room | null>(null);
   private messageHandlers: ((message: BroadcastEvent) => void)[] = [];
+  private multiplayerEventHandlers: Set<MultiplayerEventHandler> = new Set();
   private pendingMessages: Array<{
     message: ActionPayload;
     errorMessage: string;
@@ -326,6 +339,12 @@ class RoomStateService {
           leaderboard: updatedLeaderboard,
         });
         break;
+
+      case "multiplayer_event":
+        console.log("Received multiplayer event:", message);
+        // Notify all registered handlers
+        this.multiplayerEventHandlers.forEach((handler) => handler(message));
+        break;
     }
   }
 
@@ -397,8 +416,29 @@ class RoomStateService {
     this.sendAction(wsMessage, "Failed to create leaderboard entry");
   }
 
-  // Helper method to send actions and handle errors consistently
-  private sendAction(message: ActionPayload, errorMessage: string) {
+  // Public method to send multiplayer broadcast
+  public sendMultiplayerBroadcast(data: MultiplayerData) {
+    this.sendAction(
+      {
+        type: "multiplayer_broadcast",
+        data,
+      },
+      "Failed to broadcast multiplayer data"
+    );
+  }
+
+  // Public method to subscribe to multiplayer events
+  public subscribeToMultiplayerEvents(handler: MultiplayerEventHandler) {
+    this.multiplayerEventHandlers.add(handler);
+  }
+
+  // Public method to unsubscribe from multiplayer events
+  public unsubscribeFromMultiplayerEvents(handler: MultiplayerEventHandler) {
+    this.multiplayerEventHandlers.delete(handler);
+  }
+
+  // Make sendAction public
+  public sendAction(message: ActionPayload, errorMessage: string) {
     console.log("sendAction called with:", { message, errorMessage });
 
     // If we don't have a client yet, create one

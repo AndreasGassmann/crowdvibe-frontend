@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Round } from "@/types/api";
 import { roomStateService } from "@/lib/room-state-service";
 import { API_URL } from "@/lib/config";
+import type { MultiplayerData } from "@/lib/room-state-service";
 
 const API_BASE_URL = API_URL;
 
@@ -80,25 +81,71 @@ export default function GameDisplay({ currentRound }: GameDisplayProps) {
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      console.log("handleMessage", event);
+      console.log("Received message from game iframe:", event);
 
       try {
-        console.log("event.data", event.data);
-        const score = Number(event.data);
-        console.log("score", score);
-        if (typeof score === "number" && !isNaN(score) && currentRound) {
-          // Create or update leaderboard entry via websocket
-          console.log("Creating leaderboard entry:", score);
-          roomStateService.createLeaderboardEntry(score);
+        // Handle score updates (existing functionality)
+        if (typeof event.data === "number") {
+          const score = event.data;
+          console.log("Received score update:", score);
+          if (!isNaN(score) && currentRound) {
+            roomStateService.createLeaderboardEntry(score);
+          }
+          return;
+        }
+
+        // Handle multiplayer broadcasts
+        if (event.data && typeof event.data === "object") {
+          if (event.data.type === "multiplayer_broadcast" && event.data.data) {
+            console.log(
+              "Received multiplayer broadcast from game:",
+              event.data.data
+            );
+            // Forward the data to other players via WebSocket
+            roomStateService.sendMultiplayerBroadcast(
+              event.data.data as MultiplayerData
+            );
+          }
         }
       } catch (error) {
-        console.error("Failed to update leaderboard:", error);
+        console.error("Failed to handle game message:", error);
       }
     };
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [currentRound]);
+
+  // Handle incoming multiplayer events from WebSocket and forward to game iframe
+  useEffect(() => {
+    const handleMultiplayerEvent = (event: {
+      type: string;
+      data: MultiplayerData;
+    }) => {
+      console.log("Received multiplayer event from WebSocket:", event);
+      if (
+        event.type === "multiplayer_event" &&
+        iframeRef.current?.contentWindow
+      ) {
+        // Forward the event data to the game iframe
+        iframeRef.current.contentWindow.postMessage(
+          {
+            type: "multiplayer_event",
+            data: event.data,
+          },
+          "*"
+        ); // TODO: Replace with specific origin in production
+      }
+    };
+
+    // Subscribe to multiplayer events
+    roomStateService.subscribeToMultiplayerEvents(handleMultiplayerEvent);
+
+    return () => {
+      // Unsubscribe when component unmounts
+      roomStateService.unsubscribeFromMultiplayerEvents(handleMultiplayerEvent);
+    };
+  }, []);
 
   return (
     <Card className="flex-1 flex flex-col h-full dark:border-gray-800">

@@ -2,6 +2,8 @@
 // Frontend -> Backend Payloads (Action Types)
 // ==========================
 
+import type { MultiplayerData } from "../lib/room-state-service";
+
 export interface ChatAction {
   type: "chat_action";
   message: string;
@@ -32,6 +34,11 @@ export interface UnvoteAction {
   proposal_id: string;
 }
 
+export interface MultiplayerBroadcastAction {
+  type: "multiplayer_broadcast";
+  data: MultiplayerData; // JSON-serializable data
+}
+
 // Union type for all action payloads.
 export type ActionPayload =
   | ChatAction
@@ -39,7 +46,8 @@ export type ActionPayload =
   | RoundAction
   | ProposalAction
   | VoteAction
-  | UnvoteAction;
+  | UnvoteAction
+  | MultiplayerBroadcastAction;
 
 // ==========================
 // Backend -> Frontend Broadcast Events
@@ -87,9 +95,15 @@ export interface ProposalBroadcast {
   users_voted: string[];
 }
 
+export interface MultiplayerEventBroadcast {
+  type: "multiplayer_event";
+  data: MultiplayerData; // JSON-serializable data
+}
+
 // Union type for broadcast events.
 export type BroadcastEvent =
   | ChatBroadcast
   | LeaderboardBroadcast
   | RoundBroadcast
-  | ProposalBroadcast;
+  | ProposalBroadcast
+  | MultiplayerEventBroadcast;
